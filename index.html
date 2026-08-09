@@ -553,7 +553,7 @@
                 <div class="modal-handle"></div>
                 <h2 id="history-hive-title" style="color: var(--samsung-dark); margin-bottom: 10px;">Historial de la Colmena</h2>
                 
-                <button class="btn btn-warning" style="margin-bottom: 15px;" onclick="openCompareModal()">⚔️ Comparar Cuadros entre Inspecciones</button>
+                <button class="btn btn-warning" style="margin-bottom: 15px;" onclick="openCompareModal()">⚔️ Comparar Cuadros (3 Visitas)</button>
 
                 <div class="card" style="margin-top: 5px; padding: 15px;">
                     <h4 style="margin-bottom:8px;">📈 Evolución Gráfica y Cuadros</h4>
@@ -604,20 +604,24 @@
             </div>
         </div>
 
-        <!-- MODAL COMPARADOR DE FICHAS DE CUADROS -->
+        <!-- MODAL COMPARADOR DE FICHAS DE CUADROS (ACTUALIZADO A 3 VISITAS) -->
         <div id="compare-modal" class="modal hidden">
             <div class="modal-content" style="max-width: 550px;">
                 <div class="modal-handle"></div>
                 <h2 id="compare-hive-title" style="color: var(--samsung-dark); margin-bottom: 10px;">Comparar Cuadros</h2>
                 
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <div style="flex:1;">
-                        <label>Inspección A</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <div style="flex:1; min-width: 130px;">
+                        <label>Inspección A (Nueva)</label>
                         <select id="compare-visit-a" onchange="renderComparison()"></select>
                     </div>
-                    <div style="flex:1;">
-                        <label>Inspección B</label>
+                    <div style="flex:1; min-width: 130px;">
+                        <label>Inspección B (Media)</label>
                         <select id="compare-visit-b" onchange="renderComparison()"></select>
+                    </div>
+                    <div style="flex:1; min-width: 130px;">
+                        <label>Inspección C (Antigua)</label>
+                        <select id="compare-visit-c" onchange="renderComparison()"></select>
                     </div>
                 </div>
 
@@ -1635,7 +1639,7 @@
             });
         }
 
-        // --- FUNCIONES DEL COMPARADOR DE FICHAS DE CUADROS ---
+        // --- FUNCIONES DEL COMPARADOR DE FICHAS DE CUADROS (ACTUALIZADO A 3 VISITAS) ---
         function openCompareModal() {
             if (currentHistoryVisits.length < 1) {
                 showSamsungToast("No hay registros para comparar");
@@ -1647,9 +1651,11 @@
 
             const selectA = document.getElementById('compare-visit-a');
             const selectB = document.getElementById('compare-visit-b');
+            const selectC = document.getElementById('compare-visit-c');
 
             selectA.innerHTML = '';
             selectB.innerHTML = '';
+            selectC.innerHTML = '';
 
             const reversedVisits = [...currentHistoryVisits].reverse();
             reversedVisits.forEach((v) => {
@@ -1662,15 +1668,24 @@
                 optB.value = v.visitId;
                 optB.innerText = `${v.date} (${v.force})`;
                 selectB.appendChild(optB);
+
+                const optC = document.createElement('option');
+                optC.value = v.visitId;
+                optC.innerText = `${v.date} (${v.force})`;
+                selectC.appendChild(optC);
             });
 
-            selectA.selectedIndex = 0;
-            if (reversedVisits.length >= 4) {
-                selectB.selectedIndex = 3; // Hace 3 visitas (la 4ª de la lista)
-            } else if (reversedVisits.length > 1) {
+            // Selección predeterminada inteligente para tres visitas
+            selectA.selectedIndex = 0; 
+            if (reversedVisits.length >= 3) {
                 selectB.selectedIndex = 1;
+                selectC.selectedIndex = 2;
+            } else if (reversedVisits.length === 2) {
+                selectB.selectedIndex = 1;
+                selectC.selectedIndex = 1;
             } else {
                 selectB.selectedIndex = 0;
+                selectC.selectedIndex = 0;
             }
 
             renderComparison();
@@ -1725,15 +1740,17 @@
         function renderComparison() {
             const visitIdA = document.getElementById('compare-visit-a').value;
             const visitIdB = document.getElementById('compare-visit-b').value;
+            const visitIdC = document.getElementById('compare-visit-c').value;
 
             const visitA = appData.visits.find(v => v.visitId === visitIdA);
             const visitB = appData.visits.find(v => v.visitId === visitIdB);
+            const visitC = appData.visits.find(v => v.visitId === visitIdC);
 
             const body = document.getElementById('compare-body');
             body.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:14px;">
                     <div class="card" style="margin-bottom:0; padding:14px; border: 2px solid var(--samsung-blue);">
-                        <h4 style="color:var(--samsung-blue); margin-bottom:4px;">📋 Inspección A (${visitA ? visitA.date : 'N/A'})</h4>
+                        <h4 style="color:var(--samsung-blue); margin-bottom:4px;">📋 Inspección A (Nueva) (${visitA ? visitA.date : 'N/A'})</h4>
                         <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:6px;">
                             Fuerza: <strong>${visitA ? visitA.force : '-'}</strong> | Alzas: <strong>${visitA ? visitA.alzas : 0}</strong>
                         </p>
@@ -1741,11 +1758,19 @@
                     </div>
 
                     <div class="card" style="margin-bottom:0; padding:14px; border: 2px solid var(--samsung-warning);">
-                        <h4 style="color:var(--samsung-warning); margin-bottom:4px;">📋 Inspección B (${visitB ? visitB.date : 'N/A'})</h4>
+                        <h4 style="color:var(--samsung-warning); margin-bottom:4px;">📋 Inspección B (Media) (${visitB ? visitB.date : 'N/A'})</h4>
                         <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:6px;">
                             Fuerza: <strong>${visitB ? visitB.force : '-'}</strong> | Alzas: <strong>${visitB ? visitB.alzas : 0}</strong>
                         </p>
                         ${renderFramesGridForComparison(visitB)}
+                    </div>
+
+                    <div class="card" style="margin-bottom:0; padding:14px; border: 2px solid var(--samsung-secondary);">
+                        <h4 style="color:var(--samsung-secondary); margin-bottom:4px;">📋 Inspección C (Antigua) (${visitC ? visitC.date : 'N/A'})</h4>
+                        <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:6px;">
+                            Fuerza: <strong>${visitC ? visitC.force : '-'}</strong> | Alzas: <strong>${visitC ? visitC.alzas : 0}</strong>
+                        </p>
+                        ${renderFramesGridForComparison(visitC)}
                     </div>
                 </div>
             `;
