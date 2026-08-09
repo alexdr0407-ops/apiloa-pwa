@@ -6,18 +6,38 @@ if ('serviceWorker' in navigator) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Navegación SPA
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const appViews = document.querySelectorAll('.app-view');
+
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            navButtons.forEach(b => b.classList.remove('active'));
+            appViews.forEach(v => v.classList.remove('active-view'));
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.target).classList.add('active-view');
+        });
+    });
+
     const hiveForm = document.getElementById('hive-form');
     const hivesContainer = document.getElementById('hives-container');
+    const totalHivesCount = document.getElementById('total-hives-count');
+    const totalSupersCount = document.getElementById('total-supers-count');
+    
     const modal = document.getElementById('inspection-modal');
     const closeModal = document.getElementById('close-modal');
     const modalTitle = document.getElementById('modal-title');
+    const inspectionSelect = document.getElementById('inspection-select');
+    const newInspectionBtn = document.getElementById('new-inspection-btn');
     const inspectionFramesContainer = document.getElementById('inspection-frames-container');
+    
     const speechBtn = document.getElementById('speech-btn');
     const speechStatus = document.getElementById('speech-status');
     const exportBtn = document.getElementById('export-btn');
 
     let hives = JSON.parse(localStorage.getItem('apilab_hives')) || [];
     let currentHiveIndex = null;
+    let currentInspectionIndex = 0; // Índice de la visita seleccionada
     let recognition = null;
     let isListening = false;
     let statsChart = null;
@@ -25,6 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveAndRender() {
         localStorage.setItem('apilab_hives', JSON.stringify(hives));
         renderHives();
+        updateDashboardStats();
+    }
+
+    function updateDashboardStats() {
+        totalHivesCount.textContent = hives.length;
+        let totalSupers = 0;
+        hives.forEach(h => totalSupers += h.supers.length);
+        totalSupersCount.textContent = totalSupers;
     }
 
     function renderHives() {
@@ -45,13 +73,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
             });
 
+            const lastInspection = hive.inspections.length > 0 ? hive.inspections[hive.inspections.length - 1].date : 'Sin visitas';
+
             div.innerHTML = `
                 <h3>${hive.name} (${hive.type})</h3>
-                <div class="hive-meta">📅 Creada: ${hive.date}</div>
+                <div class="hive-meta">📅 Creada: ${hive.date} | 🔍 Última visita: ${lastInspection}</div>
                 <div class="hive-meta">🛡️ Cámara Base: ${hive.baseFrames} cuadros</div>
                 ${supersHtml}
                 <div class="actions-row">
-                    <button onclick="window.openInspection(${index})" class="btn-secondary">🔍 Inspeccionar & Estadísticas</button>
+                    <button onclick="window.openInspection(${index})" class="btn-secondary">🔍 Ver Historial / Inspeccionar</button>
                     <button onclick="window.addSuper(${index})" ${hive.supers.length >= 3 ? 'disabled style="opacity:0.5;"' : ''}>+ Alza</button>
                     <button onclick="window.deleteHive(${index})" class="btn-danger">Eliminar</button>
                 </div>
@@ -77,42 +107,105 @@ document.addEventListener('DOMContentLoaded', () => {
         const type = document.getElementById('hive-type').value;
         const baseFramesCount = type === 'Colmena' ? 10 : 5;
 
+        // Estructura inicial de la primera inspección automática al crear
+        const initialInspection = {
+            date: new Date().toLocaleString(),
+            baseInspection: generateInitialFrames(baseFramesCount),
+            supers: [] // Guardará instantánea de las alzas en esa visita
+        };
+
         const newHive = {
             name,
             type,
             baseFrames: baseFramesCount,
             date: new Date().toLocaleDateString(),
-            baseInspection: generateInitialFrames(baseFramesCount),
-            supers: [] 
+            supers: [], // Alzas estructurales actuales de la colmena
+            inspections: [initialInspection] // Historial de visitas
         };
 
         hives.push(newHive);
         hiveForm.reset();
         saveAndRender();
+        
+        // Redirigir automáticamente a la pestaña "Mis Unidades" tras crear
+        document.querySelector('[data-target="view-hives"]').click();
     });
 
-    // Abrir Modal de Inspección y actualizar gráfico
+    // Abrir Modal de Historial e Inspección
     window.openInspection = (index) => {
         currentHiveIndex = index;
+        currentInspectionIndex = hives[index].inspections.length - 1; // Seleccionar la más reciente por defecto
         const hive = hives[index];
-        modalTitle.textContent = `Inspección: ${hive.name}`;
+        modalTitle.textContent = `Inspecciones: ${hive.name}`;
+        updateInspectionSelect();
         renderInspectionContent();
-        updateChart(hive);
         modal.style.display = 'flex';
+    };
+
+    function updateInspectionSelect() {
+        const hive = hives[currentHiveIndex];
+        inspectionSelect.innerHTML = '';
+        hive.inspections.forEach((insp, idx) => {
+            const opt = document.createElement('option');
+            opt.value = idx;
+            opt.textContent = `Visita del: ${insp.date}`;
+            if (idx === currentInspectionIndex) opt.selected = true;
+            inspectionSelect.appendChild(opt);
+        });
+    }
+
+    inspectionSelect.onchange = (e) => {
+        currentInspectionIndex = parseInt(e.target.value);
+        renderInspectionContent();
+    };
+
+    // Crear un Nuevo Registro de Visita (Nueva Inspección)
+    newInspectionBtn.onclick = () => {
+        const hive = hives[currentHiveIndex];
+        // Clonar la última inspección o generar una limpia
+        const lastInsp = hive.inspections[hive.inspections.length - 1];
+        
+        // Copiamos la estructura actual de la colmena para la nueva visita
+        let newBase = JSON.parse(JSON.stringify(lastInsp.baseInspection));
+        let newSupersSnap = JSON.parse(JSON.stringify(lastInsp.supers));
+
+        // Si se han añadido alzas nuevas a la estructura global, asegurarlas en la visita
+        if (hive.supers.length !== newSupersSnap.length) {
+            newSupersSnap = hive.supers.map(sup => ({
+                frames: generateInitialFrames(sup.frames.length)
+            }));
+        }
+
+        const newInspection = {
+            date: new Date().toLocaleString(),
+            baseInspection: newBase,
+            supers: newSupersSnap
+        };
+
+        hive.inspections.push(newInspection);
+        currentInspectionIndex = hive.inspections.length - 1;
+        saveAndRender();
+        updateInspectionSelect();
+        renderInspectionContent();
     };
 
     function renderInspectionContent() {
         const hive = hives[currentHiveIndex];
+        const inspection = hive.inspections[currentInspectionIndex];
         inspectionFramesContainer.innerHTML = '';
 
+        if (!inspection) return;
+
+        // Renderizar Cámara Base de esta visita
         let baseDiv = document.createElement('div');
         baseDiv.innerHTML = `<h3 style="color:var(--primary-dark); margin-bottom:0.5rem;">Cámara Base (${hive.baseFrames} cuadros)</h3>`;
-        hive.baseInspection.forEach((frame, fIdx) => {
+        inspection.baseInspection.forEach((frame, fIdx) => {
             baseDiv.appendChild(createFrameCardElement(frame, 'base', fIdx));
         });
         inspectionFramesContainer.appendChild(baseDiv);
 
-        hive.supers.forEach((sup, sIdx) => {
+        // Renderizar Alzas de esta visita
+        inspection.supers.forEach((sup, sIdx) => {
             let supDiv = document.createElement('div');
             supDiv.style.marginTop = '1.5rem';
             supDiv.innerHTML = `<h3 style="color:var(--primary-dark); margin-bottom:0.5rem;">Alza ${sIdx + 1} (${sup.frames.length} cuadros)</h3>`;
@@ -121,6 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             inspectionFramesContainer.appendChild(supDiv);
         });
+
+        updateChart(inspection);
     }
 
     function createFrameCardElement(frame, sectionType, fIdx, sIdx = null) {
@@ -129,55 +224,49 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
             <h4>Cuadro #${frame.number}</h4>
             <div class="badge-container">
-                <span class="badge ${frame.states.estirado ? 'active' : ''}" onclick="window.toggleState(${currentHiveIndex}, '${sectionType}', ${fIdx}, 'estirado', ${sIdx})">Estirado</span>
-                <span class="badge ${frame.states.criaReciente ? 'active' : ''}" onclick="window.toggleState(${currentHiveIndex}, '${sectionType}', ${fIdx}, 'criaReciente', ${sIdx})">Cría Puesta</span>
-                <span class="badge ${frame.states.criaOperculada ? 'active' : ''}" onclick="window.toggleState(${currentHiveIndex}, '${sectionType}', ${fIdx}, 'criaOperculada', ${sIdx})">Cría Operculada</span>
-                <span class="badge ${frame.states.miel ? 'active' : ''}" onclick="window.toggleState(${currentHiveIndex}, '${sectionType}', ${fIdx}, 'miel', ${sIdx})">Miel</span>
-                <span class="badge ${frame.states.polen ? 'active' : ''}" onclick="window.toggleState(${currentHiveIndex}, '${sectionType}', ${fIdx}, 'polen', ${sIdx})">Polen</span>
+                <span class="badge ${frame.states.estirado ? 'active' : ''}" onclick="window.toggleState('${sectionType}', ${fIdx}, 'estirado', ${sIdx})">Estirado</span>
+                <span class="badge ${frame.states.criaReciente ? 'active' : ''}" onclick="window.toggleState('${sectionType}', ${fIdx}, 'criaReciente', ${sIdx})">Cría Puesta</span>
+                <span class="badge ${frame.states.criaOperculada ? 'active' : ''}" onclick="window.toggleState('${sectionType}', ${fIdx}, 'criaOperculada', ${sIdx})">Cría Operculada</span>
+                <span class="badge ${frame.states.miel ? 'active' : ''}" onclick="window.toggleState('${sectionType}', ${fIdx}, 'miel', ${sIdx})">Miel</span>
+                <span class="badge ${frame.states.polen ? 'active' : ''}" onclick="window.toggleState('${sectionType}', ${fIdx}, 'polen', ${sIdx})">Polen</span>
             </div>
         `;
         return card;
     }
 
-    window.toggleState = (hiveIdx, sectionType, fIdx, stateKey, sIdx) => {
-        let hive = hives[hiveIdx];
+    window.toggleState = (sectionType, fIdx, stateKey, sIdx) => {
+        let inspection = hives[currentHiveIndex].inspections[currentInspectionIndex];
         if (sectionType === 'base') {
-            hive.baseInspection[fIdx].states[stateKey] = !hive.baseInspection[fIdx].states[stateKey];
+            inspection.baseInspection[fIdx].states[stateKey] = !inspection.baseInspection[fIdx].states[stateKey];
         } else {
-            hive.supers[sIdx].frames[fIdx].states[stateKey] = !hive.supers[sIdx].frames[fIdx].states[stateKey];
+            inspection.supers[sIdx].frames[fIdx].states[stateKey] = !inspection.supers[sIdx].frames[fIdx].states[stateKey];
         }
         saveAndRender();
         renderInspectionContent();
-        updateChart(hive);
     };
 
-    // Actualizar Gráfico Chart.js
-    function updateChart(hive) {
+    // Actualizar Gráfico Chart.js para la inspección actual
+    function updateChart(inspection) {
         let counts = { estirado: 0, criaReciente: 0, criaOperculada: 0, miel: 0, polen: 0 };
 
-        // Contar en base
-        hive.baseInspection.forEach(f => {
+        inspection.baseInspection.forEach(f => {
             Object.keys(f.states).forEach(st => { if (f.states[st]) counts[st]++; });
         });
-        // Contar en alzas
-        hive.supers.forEach(sup => {
+        inspection.supers.forEach(sup => {
             sup.frames.forEach(f => {
                 Object.keys(f.states).forEach(st => { if (f.states[st]) counts[st]++; });
             });
         });
 
         const ctx = document.getElementById('hive-stats-chart').getContext('2d');
-        
-        if (statsChart) {
-            statsChart.destroy();
-        }
+        if (statsChart) statsChart.destroy();
 
         statsChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['Estirado', 'Cría Puesta', 'Cría Operculada', 'Miel', 'Polen'],
                 datasets: [{
-                    label: 'Cantidad de Cuadros',
+                    label: 'Cuadros',
                     data: [counts.estirado, counts.criaReciente, counts.criaOperculada, counts.miel, counts.polen],
                     backgroundColor: ['#9ca3af', '#f59e0b', '#d97706', '#10b981', '#3b82f6'],
                     borderWidth: 1
@@ -186,9 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
                 plugins: { legend: { display: false } }
             }
         });
@@ -206,10 +293,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Gestión de Alzas y Unidades
+    // Gestión estructural de Alzas
     window.addSuper = (index) => {
         if (hives[index].supers.length < 3) {
             hives[index].supers.push({ frames: generateInitialFrames(10) });
+            // Añadir también el alza a todas las inspecciones históricas para mantener consistencia
+            hives[index].inspections.forEach(insp => {
+                insp.supers.push({ frames: generateInitialFrames(10) });
+            });
             saveAndRender();
         } else {
             alert('Límite máximo de alzas alcanzado.');
@@ -219,6 +310,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.removeSuper = (index, sIndex) => {
         if (confirm('¿Retirar esta alza?')) {
             hives[index].supers.splice(sIndex, 1);
+            hives[index].inspections.forEach(insp => {
+                insp.supers.splice(sIndex, 1);
+            });
             saveAndRender();
         }
     };
@@ -237,25 +331,27 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        let csvContent = "data:text/csv;charset=utf-8,Unidad,Tipo,FechaCreacion,Seccion,Cuadro,Estirado,CriaPuesta,CriaOperculada,Miel,Polen\r\n";
+        let csvContent = "data:text/csv;charset=utf-8,Unidad,Tipo,FechaCreacion,FechaVisita,Seccion,Cuadro,Estirado,CriaPuesta,CriaOperculada,Miel,Polen\r\n";
 
         hives.forEach(hive => {
-            // Base
-            hive.baseInspection.forEach(f => {
-                let row = [
-                    `"${hive.name}"`, hive.type, hive.date, "Base", f.number,
-                    f.states.estirado ? 1 : 0, f.states.criaReciente ? 1 : 0, f.states.criaOperculada ? 1 : 0, f.states.miel ? 1 : 0, f.states.polen ? 1 : 0
-                ].join(",");
-                csvContent += row + "\r\n";
-            });
-            // Alzas
-            hive.supers.forEach((sup, sIdx) => {
-                sup.frames.forEach(f => {
+            hive.inspections.forEach(insp => {
+                // Base
+                insp.baseInspection.forEach(f => {
                     let row = [
-                        `"${hive.name}"`, hive.type, hive.date, `"Alza ${sIdx + 1}"`, f.number,
+                        `"${hive.name}"`, hive.type, hive.date, `"${insp.date}"`, "Base", f.number,
                         f.states.estirado ? 1 : 0, f.states.criaReciente ? 1 : 0, f.states.criaOperculada ? 1 : 0, f.states.miel ? 1 : 0, f.states.polen ? 1 : 0
                     ].join(",");
                     csvContent += row + "\r\n";
+                });
+                // Alzas
+                insp.supers.forEach((sup, sIdx) => {
+                    sup.frames.forEach(f => {
+                        let row = [
+                            `"${hive.name}"`, hive.type, hive.date, `"${insp.date}"`, `"Alza ${sIdx + 1}"`, f.number,
+                            f.states.estirado ? 1 : 0, f.states.criaReciente ? 1 : 0, f.states.criaOperculada ? 1 : 0, f.states.miel ? 1 : 0, f.states.polen ? 1 : 0
+                        ].join(",");
+                        csvContent += row + "\r\n";
+                    });
                 });
             });
         });
@@ -263,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `apilab_export_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute("download", `apilab_historial_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -311,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function processVoiceCommand(text) {
         if (currentHiveIndex === null) return;
-        let hive = hives[currentHiveIndex];
+        let inspection = hives[currentHiveIndex].inspections[currentInspectionIndex];
         const matchNumber = text.match(/cuadro\s+(\d+)/);
         if (!matchNumber) return;
 
@@ -320,15 +416,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let fIndex = -1;
         let sIndex = null;
 
-        let baseTarget = hive.baseInspection.find(f => f.number === frameNum);
+        let baseTarget = inspection.baseInspection.find(f => f.number === frameNum);
         if (baseTarget) {
-            fIndex = hive.baseInspection.indexOf(baseTarget);
+            fIndex = inspection.baseInspection.indexOf(baseTarget);
         } else {
-            for (let s = 0; s < hive.supers.length; s++) {
-                let superTarget = hive.supers[s].frames.find(f => f.number === frameNum);
+            for (let s = 0; s < inspection.supers.length; s++) {
+                let superTarget = inspection.supers[s].frames.find(f => f.number === frameNum);
                 if (superTarget) {
                     section = 'super';
-                    fIndex = hive.supers[s].frames.indexOf(superTarget);
+                    fIndex = inspection.supers[s].frames.indexOf(superTarget);
                     sIndex = s;
                     break;
                 }
@@ -338,17 +434,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fIndex === -1) return;
 
         if (text.includes('estirado')) {
-            window.toggleState(currentHiveIndex, section, fIndex, 'estirado', sIndex);
+            window.toggleState(section, fIndex, 'estirado', sIndex);
         } else if (text.includes('puesta') || text.includes('cría reciente')) {
-            window.toggleState(currentHiveIndex, section, fIndex, 'criaReciente', sIndex);
+            window.toggleState(section, fIndex, 'criaReciente', sIndex);
         } else if (text.includes('operculada') || text.includes('cría operculada')) {
-            window.toggleState(currentHiveIndex, section, fIndex, 'criaOperculada', sIndex);
+            window.toggleState(section, fIndex, 'criaOperculada', sIndex);
         } else if (text.includes('miel')) {
-            window.toggleState(currentHiveIndex, section, fIndex, 'miel', sIndex);
+            window.toggleState(section, fIndex, 'miel', sIndex);
         } else if (text.includes('polen')) {
-            window.toggleState(currentHiveIndex, section, fIndex, 'polen', sIndex);
+            window.toggleState(section, fIndex, 'polen', sIndex);
         }
     }
 
-    renderHives();
+    saveAndRender();
 });
