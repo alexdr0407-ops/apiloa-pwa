@@ -2,11 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Ajuste de Viewport para pantallas AMOLED y muescas/gestos (Full Screen) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- Configuración para modo App Nativa (Sin barra de navegadores) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0072CE">
+    
     <title>Gestión de Colmenares Pro - Samsung One UI</title>
-    <!-- Librería Chart.js para Gráficos de Evolución -->
+    
+    <!-- Librería Chart.js para Gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Fuente SamsungOne / Roboto -->
+    <!-- Fuente Roboto / Samsung One UI -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
@@ -25,22 +34,33 @@
             --radius-btn: 25px;
         }
 
+        /* Comportamiento de App Nativa sin scrollbars de navegador */
+        html, body { 
+            height: 100%;
+            overscroll-behavior-y: none; /* Desactiva el recargar al estirar hacia abajo */
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
         * { 
             box-sizing: border-box; 
             margin: 0; 
             padding: 0; 
-            font-family: 'SamsungOne', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            scrollbar-width: none; /* Oculta scrollbar en Firefox */
         }
+
+        ::-webkit-scrollbar { display: none; } /* Oculta scrollbar en Chrome/Samsung */
 
         body { 
             background-color: var(--samsung-bg); 
             color: var(--samsung-dark); 
-            padding-bottom: 90px;
+            padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+            padding-top: env(safe-area-inset-top, 0px);
             font-size: 15px;
         }
         
-        /* Utilidades UI Samsung */
         .hidden { display: none !important; }
         
         .btn { 
@@ -52,7 +72,7 @@
             font-size: 15px; 
             cursor: pointer; 
             margin-top: 12px; 
-            transition: all 0.2s ease;
+            transition: transform 0.15s ease, background-color 0.2s ease;
             text-align: center;
             box-shadow: 0 2px 6px rgba(0,0,0,0.06);
             display: inline-flex;
@@ -60,7 +80,7 @@
             justify-content: center;
             gap: 6px;
         }
-        .btn:active { transform: scale(0.98); }
+        .btn:active { transform: scale(0.97); }
         .btn-primary { background: var(--samsung-blue); color: white; }
         .btn-primary:active { background: var(--samsung-blue-dark); }
         .btn-danger { background: var(--samsung-danger); color: white; }
@@ -97,14 +117,15 @@
             background-color: #FAFAFA;
             color: var(--samsung-dark);
             outline: none;
-            transition: border-color 0.2s;
+            -webkit-user-select: text;
+            user-select: text;
         }
         input:focus, select:focus, textarea:focus {
             border-color: var(--samsung-blue);
             background-color: #FFFFFF;
         }
         
-        /* Botones de Selección Interactivos */
+        /* Botones de Selección */
         .toggle-btn-group { display: flex; gap: 10px; margin: 8px 0 15px; }
         .toggle-btn { 
             flex: 1; 
@@ -125,21 +146,21 @@
             border-color: var(--samsung-blue);
         }
 
-        /* Navegación estilo Samsung One UI */
+        /* Navegación Estilo Samsung One UI */
         nav { 
             position: fixed; 
-            bottom: 15px; 
+            bottom: calc(15px + env(safe-area-inset-bottom, 0px)); 
             left: 5% ;
             width: 90%; 
-            background: rgba(255, 255, 255, 0.92); 
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.94); 
+            backdrop-filter: blur(12px);
             display: flex; 
             justify-content: space-around; 
             padding: 8px 0; 
             border-radius: 30px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
             z-index: 100; 
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
         }
         nav div { 
             color: var(--samsung-secondary); 
@@ -157,11 +178,10 @@
             background-color: var(--samsung-soft-blue);
         }
         
-        /* Vistas & Headers estilo One UI */
         .view { padding: 20px 16px; }
         .header-container {
-            padding: 20px 8px 15px 8px;
-            margin-bottom: 10px;
+            padding: 10px 8px 15px 8px;
+            margin-bottom: 5px;
         }
         .header-title { 
             font-size: 28px; 
@@ -175,7 +195,6 @@
             margin-top: 2px;
         }
         
-        /* Alertas de Samsung */
         .alert-item { 
             background: #FFEBEE; 
             border-radius: 16px;
@@ -221,15 +240,15 @@
             border-color: var(--samsung-blue-dark); 
         }
         
-        /* Modales Samsung One UI (Bottom Sheet) */
+        /* Modales Samsung One UI */
         .modal { 
             position: fixed; 
             top: 0; 
             left: 0; 
             width: 100%; 
             height: 100%; 
-            background: rgba(0,0,0,0.4); 
-            backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.45); 
+            backdrop-filter: blur(5px);
             display: flex; 
             justify-content: center; 
             align-items: flex-end; 
@@ -243,10 +262,11 @@
             border-top-right-radius: 28px; 
             width: 100%; 
             max-width: 500px; 
-            max-height: 85vh; 
+            max-height: 88vh; 
             overflow-y: auto; 
             animation: slideUp 0.3s ease-out;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
         }
 
         @keyframes slideUp {
@@ -262,26 +282,24 @@
             margin: 0 auto 15px auto;
         }
 
-        /* Notificación Toast Nativa Samsung */
         #samsung-toast {
             position: fixed;
-            bottom: 85px;
+            bottom: calc(85px + env(safe-area-inset-bottom, 0px));
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(30, 30, 30, 0.9);
+            background: rgba(30, 30, 30, 0.92);
             color: white;
             padding: 12px 24px;
             border-radius: 25px;
             font-size: 14px;
             font-weight: 500;
             z-index: 2000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            transition: opacity 0.3s ease;
             text-align: center;
             max-width: 85%;
         }
         
-        /* Tags & Previews */
         .queen-color { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2); margin-left: 5px; vertical-align: middle; }
         .photo-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 16px; margin-top: 10px; }
         .history-entry { border-bottom: 1px solid #F0F0F0; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -290,14 +308,14 @@
 </head>
 <body>
 
-    <!-- NOTIFICACIÓN TOAST SAMSUNG -->
+    <!-- TOAST SAMSUNG -->
     <div id="samsung-toast" class="hidden"></div>
 
-    <!-- VISTA: LOGIN -->
+    <!-- VISTA LOGIN -->
     <div id="login-view" class="view">
         <div class="header-container" style="text-align: center; margin-top: 40px;">
             <div class="header-title">Colmenares Pro</div>
-            <div class="header-subtitle">Samsung Edition</div>
+            <div class="header-subtitle">Samsung Native Edition</div>
         </div>
         <div class="card">
             <h3 style="margin-bottom: 15px;">Iniciar Sesión</h3>
@@ -313,7 +331,7 @@
     <!-- APP PRINCIPAL -->
     <div id="main-app" class="hidden">
         
-        <!-- VISTA: DASHBOARD -->
+        <!-- DASHBOARD -->
         <div id="dashboard-view" class="view">
             <div class="header-container">
                 <div class="header-title">Panel de Control</div>
@@ -334,7 +352,7 @@
             <button class="btn btn-danger" onclick="logout()">Cerrar Sesión</button>
         </div>
 
-        <!-- VISTA: MIS UNIDADES -->
+        <!-- UNIDADES -->
         <div id="unidades-view" class="view hidden">
             <div class="header-container">
                 <div class="header-title">Mis Colmenas</div>
@@ -343,7 +361,7 @@
             <div id="hives-list"></div>
         </div>
 
-        <!-- VISTA: NUEVA UNIDAD -->
+        <!-- NUEVA UNIDAD -->
         <div id="nueva-unidad-view" class="view hidden">
             <div class="header-container">
                 <div class="header-title">Añadir Unidad</div>
@@ -366,14 +384,16 @@
             </div>
         </div>
 
-        <!-- MODAL DE INSPECCIÓN (VISITA / EDICIÓN) -->
+        <!-- MODAL DE INSPECCIÓN (CREAR / EDITAR) -->
         <div id="inspection-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-handle"></div>
-                <h2 id="ins-hive-title" style="margin-bottom: 15px; color: var(--samsung-dark);">Inspección</h2>
+                <h2 id="ins-hive-title" style="margin-bottom: 10px; color: var(--samsung-dark);">Inspección</h2>
                 
-                <div class="card" style="background: var(--samsung-soft-blue); padding: 12px 16px;">
-                    <strong style="color: var(--samsung-blue);">Información:</strong> <span id="ins-prev-info" style="font-size: 13px;">Sin datos previos.</span>
+                <!-- Indicador de fecha / estado -->
+                <div id="ins-prev-badge" class="card" style="background: var(--samsung-soft-blue); padding: 12px 16px; margin-bottom: 15px;">
+                    <strong style="color: var(--samsung-blue);" id="ins-badge-label">Información:</strong> 
+                    <span id="ins-prev-info" style="font-size: 13px;">Sin datos previos.</span>
                 </div>
 
                 <h3 style="margin-top: 15px; font-size: 16px;">1. Valoración General y Alzas</h3>
@@ -402,12 +422,10 @@
                 <h3 style="margin-top: 20px; font-size: 16px;">2. Estado de Cuadros</h3>
                 <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:10px;">Toca cualquier cuadro para detallar su contenido:</p>
                 
-                <!-- Contenedor dinámico de cuadros -->
                 <div id="frames-sections-container"></div>
 
                 <h3 style="margin-top: 20px; font-size: 16px;">3. Intervenciones</h3>
                 
-                <!-- ALIMENTACIÓN -->
                 <label>Alimentación Suministrada</label>
                 <select id="ins-feed-type" onchange="toggleFeedProportion()">
                     <option value="Ninguna">Ninguna</option>
@@ -424,14 +442,12 @@
                     </div>
                 </div>
 
-                <!-- PROTEÍNA -->
                 <label>Proteína</label>
                 <div class="toggle-btn-group">
                     <div id="protein-si" class="toggle-btn" onclick="setProtein('Sí')">Sí</div>
                     <div id="protein-no" class="toggle-btn active" onclick="setProtein('No')">No</div>
                 </div>
 
-                <!-- TRATAMIENTO SANITARIO -->
                 <label>Tratamiento Sanitario</label>
                 <input type="text" id="ins-treatment" placeholder="Ej: Apivar, Varromed, etc.">
                 
@@ -439,10 +455,10 @@
                 <button class="btn btn-info" style="margin-bottom: 10px;" onclick="startDictation()">🎤 Dictar Observación</button>
                 <textarea id="ins-notes" rows="3" placeholder="Observaciones escritas o dictadas..."></textarea>
                 
-                <label>Adjuntar/Cambiar Fotografía</label>
+                <label id="photo-input-label">Adjuntar Fotografía</label>
                 <input type="file" id="ins-photo-input" accept="image/*" capture="environment">
 
-                <button class="btn btn-success" onclick="finishInspection()">Guardar Inspección</button>
+                <button class="btn btn-success" id="btn-save-inspection" onclick="finishInspection()">Guardar Registro</button>
                 <button class="btn btn-danger" style="background: #888;" onclick="closeModal('inspection-modal')">Cancelar</button>
             </div>
         </div>
@@ -509,7 +525,7 @@
             </div>
         </div>
 
-        <!-- MODAL HISTORIAL COMPLETO DE COLMENA Y GRÁFICOS -->
+        <!-- MODAL HISTORIAL Y GRÁFICOS -->
         <div id="history-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-handle"></div>
@@ -550,7 +566,7 @@
             </div>
         </div>
 
-        <!-- BARRA DE NAVEGACIÓN INFERIOR SAMSUNG -->
+        <!-- NAVEGACIÓN INFERIOR ONE UI -->
         <nav>
             <div id="nav-dash" class="active-nav" onclick="showView('dashboard-view', 'nav-dash')">📊<br>Panel</div>
             <div id="nav-unid" onclick="showView('unidades-view', 'nav-unid'); renderHives();">🐝<br>Colmenas</div>
@@ -559,7 +575,31 @@
     </div>
 
     <script>
-        // --- ESTADO Y BASE DE DATOS LOCAL SEGURA ---
+        // --- INYECCIÓN DINÁMICA DE MANIFEST PWA (Para ocultar barra de Chrome) ---
+        (function injectPWA() {
+            const manifest = {
+                "name": "Colmenares Pro",
+                "short_name": "Colmenares",
+                "start_url": ".",
+                "display": "standalone",
+                "background_color": "#F4F6F9",
+                "theme_color": "#0072CE",
+                "icons": [{
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐝</text></svg>",
+                    "sizes": "192x192 512x512",
+                    "type": "image/svg+xml"
+                }]
+            };
+            const stringManifest = JSON.stringify(manifest);
+            const blob = new Blob([stringManifest], {type: 'application/json'});
+            const manifestURL = URL.createObjectURL(blob);
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestURL;
+            document.head.appendChild(link);
+        })();
+
+        // --- ESTADO GLOBAL ---
         let appData = {
             hives: [],
             visits: [],
@@ -567,12 +607,11 @@
             reminders: []
         };
         let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, photoBase64: null };
-        let editingVisitId = null; // Variable para controlar si editamos una visita existente
+        let editingVisitId = null; // Controla si estamos editando o creando
         let currentFrameKey = null;
         let currentHistoryVisits = [];
         let chartInstance = null;
 
-        // Variables de estado temporal
         let selectedFeedProportion = '1:1';
         let selectedProtein = 'No';
 
@@ -601,7 +640,6 @@
             return Math.random().toString(36).substr(2, 7).toUpperCase();
         }
 
-        // --- AUTENTICACIÓN Y SESIÓN ---
         function checkSession() {
             if (localStorage.getItem('colmenares_session') === 'active') {
                 document.getElementById('login-view').classList.add('hidden');
@@ -618,7 +656,7 @@
                 localStorage.setItem('colmenares_session', 'active');
                 document.getElementById('login-error').classList.add('hidden');
                 checkSession();
-                showSamsungToast("Sesión iniciada correctamente");
+                showSamsungToast("Sesión iniciada");
             } else {
                 document.getElementById('login-error').classList.remove('hidden');
             }
@@ -629,20 +667,16 @@
             location.reload();
         }
 
-        // --- NOTIFICACIONES MÓVILES ---
         function requestNotificationPermission() {
             if ("Notification" in window) {
                 Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        showSamsungToast("Notificaciones Samsung activadas");
-                    }
+                    if (permission === "granted") showSamsungToast("Notificaciones activadas");
                 });
             } else {
                 showSamsungToast("Navegador no soporta notificaciones");
             }
         }
 
-        // --- PERSISTENCIA Y CARGA ROBUSTA ---
         function saveData() {
             localStorage.setItem('colmenares_data', JSON.stringify(appData));
         }
@@ -650,26 +684,19 @@
         function loadData() {
             try {
                 const data = localStorage.getItem('colmenares_data');
-                if (data) {
-                    appData = JSON.parse(data);
-                }
+                if (data) appData = JSON.parse(data);
             } catch (e) {
-                console.error("Error al cargar localStorage:", e);
                 appData = {};
             }
-            
-            // Garantizar estructura mínima sin undefined
             if (!Array.isArray(appData.hives)) appData.hives = [];
             if (!Array.isArray(appData.visits)) appData.visits = [];
             if (!Array.isArray(appData.dismissedAlerts)) appData.dismissedAlerts = [];
             if (!Array.isArray(appData.reminders)) appData.reminders = [];
         }
 
-        // --- NAVEGACIÓN ---
         function showView(viewId, navId) {
             document.querySelectorAll('#main-app .view').forEach(v => v.classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
-            
             if(navId) {
                 document.querySelectorAll('nav div').forEach(n => n.classList.remove('active-nav'));
                 document.getElementById(navId).classList.add('active-nav');
@@ -680,7 +707,6 @@
             document.getElementById(id).classList.add('hidden');
         }
 
-        // --- CREACIÓN DE NUEVA UNIDAD ---
         function createHive() {
             try {
                 const idInput = document.getElementById('new-hive-id');
@@ -697,8 +723,6 @@
                 }
 
                 const numFrames = (type === 'Enjambre') ? 5 : 10;
-                const state = "Activa";
-
                 let frames = [];
                 for (let i = 0; i < numFrames; i++) {
                     frames.push({ id: `CWD-${generateID()}`, position: i + 1 });
@@ -707,37 +731,31 @@
                 const newHive = {
                     hiveId: id,
                     type: type,
-                    state: state,
+                    state: "Activa",
                     queenYear: queenYear,
                     alzas: 0,
                     frames: frames,
                     lastVisit: null
                 };
 
-                if (!Array.isArray(appData.hives)) appData.hives = [];
-
                 appData.hives.push(newHive);
                 saveData();
-                showSamsungToast(`${type} "${id}" registrada con éxito`);
+                showSamsungToast(`${type} "${id}" registrada`);
                 
                 if (idInput) idInput.value = '';
                 showView('unidades-view', 'nav-unid');
                 renderHives();
                 renderDashboard();
             } catch (err) {
-                console.error("Error al crear unidad:", err);
                 showSamsungToast("Error al guardar registro");
             }
         }
 
-        // --- BORRAR COLMENA / ENJAMBRE ---
         function deleteHive(hiveId) {
-            if (confirm(`¿Estás seguro de que deseas borrar la unidad "${hiveId}" y todo su historial de registros?`)) {
+            if (confirm(`¿Borrar unidad "${hiveId}" y todo su historial?`)) {
                 appData.hives = appData.hives.filter(h => h.hiveId !== hiveId);
                 appData.visits = appData.visits.filter(v => v.hiveId !== hiveId);
-                if (appData.reminders) {
-                    appData.reminders = appData.reminders.filter(r => r.hiveId !== hiveId);
-                }
+                if (appData.reminders) appData.reminders = appData.reminders.filter(r => r.hiveId !== hiveId);
                 saveData();
                 renderHives();
                 renderDashboard();
@@ -745,11 +763,9 @@
             }
         }
 
-        // --- BORRAR REGISTRO DE INSPECCIÓN INDIVIDUAL ---
         function deleteVisit(visitId, hiveId) {
-            if (confirm("¿Estás seguro de que deseas borrar este registro de inspección?")) {
+            if (confirm("¿Borrar este registro de inspección?")) {
                 appData.visits = appData.visits.filter(v => v.visitId !== visitId);
-                
                 const remainingVisits = appData.visits.filter(v => v.hiveId === hiveId);
                 const hiveObj = appData.hives.find(h => h.hiveId === hiveId);
                 if (hiveObj) {
@@ -760,7 +776,6 @@
                         hiveObj.lastVisit = null;
                     }
                 }
-                
                 saveData();
                 openHiveHistory(hiveId);
                 renderHives();
@@ -775,7 +790,7 @@
             container.innerHTML = '';
             
             if (!appData.hives || appData.hives.length === 0) {
-                container.innerHTML = '<div class="card"><p style="text-align:center; color:var(--samsung-secondary);">No hay colmenas ni enjambres registrados.</p></div>';
+                container.innerHTML = '<div class="card"><p style="text-align:center; color:var(--samsung-secondary);">No hay unidades registradas.</p></div>';
                 return;
             }
 
@@ -794,7 +809,7 @@
                         </div>
                         <div style="display:flex; gap:8px; align-items:center;">
                             <button class="btn btn-primary" style="width: auto; padding: 10px 14px; margin-top:0;" onclick="openInspection(${index})">Inspeccionar</button>
-                            <button class="btn btn-danger" style="width: auto; padding: 10px 12px; margin-top:0; font-size:16px;" onclick="deleteHive('${hive.hiveId}')" title="Borrar unidad">🗑️</button>
+                            <button class="btn btn-danger" style="width: auto; padding: 10px 12px; margin-top:0; font-size:16px;" onclick="deleteHive('${hive.hiveId}')">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -802,7 +817,6 @@
             });
         }
 
-        // --- DASHBOARD & ALERTAS ---
         function renderDashboard() {
             const alertsContainer = document.getElementById('alerts-container');
             if (!alertsContainer) return;
@@ -818,7 +832,7 @@
             appData.hives.forEach(hive => {
                 const alertKeyOldQueen = `queen_${hive.hiveId}`;
                 if (2026 - hive.queenYear >= 2 && !appData.dismissedAlerts.includes(alertKeyOldQueen)) {
-                    addAlertUI(alertsContainer, alertKeyOldQueen, `Reina antigua en <strong>${hive.hiveId}</strong> (Año ${hive.queenYear}).`);
+                    addAlertUI(alertsContainer, alertKeyOldQueen, `Reina antigua en <strong>${hive.hiveId}</strong> (${hive.queenYear}).`);
                     activeAlertsCount++;
                 }
 
@@ -828,11 +842,11 @@
                         const lastDate = new Date(hive.lastVisit);
                         const diffDays = Math.ceil(Math.abs(today - lastDate) / (1000 * 60 * 60 * 24));
                         if (diffDays > 30) {
-                            addAlertUI(alertsContainer, alertKeyNoVisit, `<strong>${hive.hiveId}</strong> lleva ${diffDays} días sin inspeccionar.`);
+                            addAlertUI(alertsContainer, alertKeyNoVisit, `<strong>${hive.hiveId}</strong> lleva ${diffDays} días sin revisión.`);
                             activeAlertsCount++;
                         }
                     } else {
-                        addAlertUI(alertsContainer, alertKeyNoVisit, `<strong>${hive.hiveId}</strong> sin visitas registradas.`);
+                        addAlertUI(alertsContainer, alertKeyNoVisit, `<strong>${hive.hiveId}</strong> sin visitas.`);
                         activeAlertsCount++;
                     }
                 }
@@ -841,7 +855,7 @@
             if (appData.reminders) {
                 appData.reminders.forEach(rem => {
                     if (!appData.dismissedAlerts.includes(rem.id) && todayStr >= rem.targetDate) {
-                        addAlertUI(alertsContainer, rem.id, `💊 <strong>Tratamiento en ${rem.hiveId}</strong>: Revisar "${rem.treatment}".`);
+                        addAlertUI(alertsContainer, rem.id, `💊 <strong>Tratamiento en ${rem.hiveId}</strong>: "${rem.treatment}".`);
                         activeAlertsCount++;
                     }
                 });
@@ -857,10 +871,7 @@
         function addAlertUI(container, alertId, messageHTML) {
             const div = document.createElement('div');
             div.className = 'alert-item';
-            div.innerHTML = `
-                <div>${messageHTML}</div>
-                <button class="dismiss-btn" onclick="dismissAlert('${alertId}')" title="Descartar">✕</button>
-            `;
+            div.innerHTML = `<div>${messageHTML}</div><button class="dismiss-btn" onclick="dismissAlert('${alertId}')">✕</button>`;
             container.appendChild(div);
         }
 
@@ -869,11 +880,9 @@
                 appData.dismissedAlerts.push(alertId);
                 saveData();
                 renderDashboard();
-                showSamsungToast("Alerta descartada");
             }
         }
 
-        // --- CONTROLADORES DE INTERVENCIONES ---
         function toggleFeedProportion() {
             const feedType = document.getElementById('ins-feed-type').value;
             const container = document.getElementById('feed-prop-container');
@@ -896,13 +905,17 @@
             document.getElementById('protein-no').classList.toggle('active', val === 'No');
         }
 
-        // --- APERTURA DE MODAL PARA NUEVA INSPECCIÓN ---
+        // --- 1. MODO NUEVA INSPECCIÓN ---
         function openInspection(hiveIndex) {
-            editingVisitId = null; // Modo Nueva Inspección
+            editingVisitId = null; // Reiniciar variable de edición
             const hive = appData.hives[hiveIndex];
             currentInspection = { hiveId: hive.hiveId, hiveIndex: hiveIndex, frames: {}, photoBase64: null };
             
             document.getElementById('ins-hive-title').innerText = `Nueva Inspección: ${hive.hiveId}`;
+            document.getElementById('ins-badge-label').innerText = "Información:";
+            document.getElementById('photo-input-label').innerText = "Adjuntar Fotografía";
+            document.getElementById('btn-save-inspection').innerText = "Guardar Registro";
+
             document.getElementById('ins-alzas').value = hive.alzas || 0;
             
             const prevVisits = appData.visits.filter(v => v.hiveId === hive.hiveId);
@@ -913,8 +926,7 @@
                 document.getElementById('ins-prev-info').innerText = 'Sin visitas previas.';
             }
 
-            renderInspectionFrames();
-
+            // Reseteo de campos vacíos
             document.getElementById('ins-force').value = 'Fuerte';
             document.getElementById('ins-behavior').value = 'Tranquila';
             document.getElementById('ins-feed-type').value = 'Ninguna';
@@ -925,17 +937,19 @@
             document.getElementById('ins-notes').value = '';
             document.getElementById('ins-photo-input').value = '';
 
+            renderInspectionFrames();
             document.getElementById('inspection-modal').classList.remove('hidden');
         }
 
-        // --- APERTURA DE MODAL PARA EDITAR INSPECCIÓN EXISTENTE ---
+        // --- 2. MODO EDITAR INSPECCIÓN EXISTENTE (MISMO FORMULARIO, FECHA INTACTA) ---
         function editInspection(visitId) {
             const visit = appData.visits.find(v => v.visitId === visitId);
             if (!visit) return;
 
-            editingVisitId = visitId; // Modo Edición
+            editingVisitId = visitId; // Marcamos el ID a editar
             const hiveIndex = appData.hives.findIndex(h => h.hiveId === visit.hiveId);
             
+            // Copiamos datos previos e imágenes
             currentInspection = { 
                 hiveId: visit.hiveId, 
                 hiveIndex: hiveIndex, 
@@ -943,15 +957,19 @@
                 photoBase64: visit.photo || null 
             };
 
+            // Cambiar textos visuales del modal
             document.getElementById('ins-hive-title').innerText = `Editar Inspección: ${visit.hiveId}`;
-            document.getElementById('ins-prev-info').innerHTML = `📅 Fecha de registro: <strong>${visit.date}</strong> (Fecha fija, no editable)`;
+            document.getElementById('ins-badge-label').innerText = "📅 Fecha Fija (No editable):";
+            document.getElementById('ins-prev-info').innerHTML = `<strong>${visit.date}</strong> (Sólo puedes cambiar contenidos)`;
+            document.getElementById('photo-input-label').innerText = visit.photo ? "Cambiar Fotografía (Ya tiene una guardada)" : "Adjuntar Fotografía";
+            document.getElementById('btn-save-inspection').innerText = "Actualizar Registro";
 
-            // Cargar valores existentes
+            // Precargar el estado actual
             document.getElementById('ins-force').value = visit.force || 'Fuerte';
             document.getElementById('ins-alzas').value = visit.alzas || 0;
             document.getElementById('ins-behavior').value = visit.behavior || 'Tranquila';
 
-            // Cargar alimentación
+            // Parsear alimentación previa
             let feedType = 'Ninguna';
             let prop = '1:1';
             if (visit.feed) {
@@ -984,6 +1002,7 @@
             const container = document.getElementById('frames-sections-container');
             container.innerHTML = '';
 
+            // Cámara de cría
             const camaraDiv = document.createElement('div');
             camaraDiv.innerHTML = `<h4 style="margin:10px 0 5px; font-size:14px; color:var(--samsung-blue);">Cámara de Cría (${hive.frames.length} Cuadros)</h4>`;
             const camaraGrid = document.createElement('div');
@@ -1001,6 +1020,7 @@
             camaraDiv.appendChild(camaraGrid);
             container.appendChild(camaraDiv);
 
+            // Alzas
             for (let a = 1; a <= numAlzas; a++) {
                 const alzaDiv = document.createElement('div');
                 alzaDiv.innerHTML = `<h4 style="margin:15px 0 5px; font-size:14px; color:var(--samsung-blue);">Alza ${a} (10 Cuadros)</h4>`;
@@ -1024,11 +1044,8 @@
         function toggleBroodQuality() {
             const val = document.getElementById('frame-brood-presence').value;
             const container = document.getElementById('frame-brood-quality-container');
-            if (val !== 'Sin cría') {
-                container.classList.remove('hidden');
-            } else {
-                container.classList.add('hidden');
-            }
+            if (val !== 'Sin cría') container.classList.remove('hidden');
+            else container.classList.add('hidden');
         }
 
         function openFrameModal(key, displayName) {
@@ -1089,15 +1106,15 @@
                 const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
 
                 if (editingVisitId) {
-                    // --- MODO EDICIÓN ---
+                    // --- MODO GUARDAR EDICIÓN (FECHA MANTENIDA INTEGRA) ---
                     const visitIndex = appData.visits.findIndex(v => v.visitId === editingVisitId);
                     if (visitIndex !== -1) {
-                        const originalDate = appData.visits[visitIndex].date; // Mantener la fecha original intacta
+                        const originalDate = appData.visits[visitIndex].date; // CONSERVAR FECHA EXACTA
                         
                         appData.visits[visitIndex] = {
                             visitId: editingVisitId,
                             hiveId: currentInspection.hiveId,
-                            date: originalDate, // MANTENER FECHA ORIGINAL
+                            date: originalDate, // NO SE MODIFICA LA FECHA
                             force: document.getElementById('ins-force').value,
                             alzas: numAlzas,
                             behavior: document.getElementById('ins-behavior').value,
@@ -1111,7 +1128,7 @@
                         showSamsungToast("Registro actualizado correctamente");
                     }
                 } else {
-                    // --- MODO CREACIÓN ---
+                    // --- MODO REGISTRO NUEVO ---
                     const todayStr = new Date().toISOString().split('T')[0];
                     const visitData = {
                         visitId: generateID(),
@@ -1130,24 +1147,22 @@
 
                     appData.visits.push(visitData);
                     appData.hives[hiveIndex].lastVisit = todayStr;
-                    showSamsungToast("Inspección guardada correctamente");
+                    showSamsungToast("Inspección guardada");
                 }
 
                 if (treatmentText !== '' && !editingVisitId) {
-                    const weeksInput = prompt(`Tratamiento: "${treatmentText}"\n¿En cuántas SEMANAS programar alerta?`, "2");
+                    const weeksInput = prompt(`Tratamiento: "${treatmentText}"\n¿Programar aviso en cuántas SEMANAS?`, "2");
                     if (weeksInput !== null) {
                         const weeks = parseInt(weeksInput, 10);
                         if (!isNaN(weeks) && weeks >= 0) {
                             const targetDate = new Date();
                             targetDate.setDate(targetDate.getDate() + (weeks * 7));
-                            const targetStr = targetDate.toISOString().split('T')[0];
-
                             if (!appData.reminders) appData.reminders = [];
                             appData.reminders.push({
                                 id: 'rem_' + generateID(),
                                 hiveId: currentInspection.hiveId,
                                 treatment: treatmentText,
-                                targetDate: targetStr,
+                                targetDate: targetDate.toISOString().split('T')[0],
                                 weeks: weeks
                             });
                         }
@@ -1159,12 +1174,11 @@
                 saveData();
                 closeModal('inspection-modal');
                 
-                // Si el historial estaba abierto, actualizarlo
                 if (!document.getElementById('history-modal').classList.contains('hidden')) {
                     openHiveHistory(currentInspection.hiveId);
                 }
                 
-                editingVisitId = null;
+                editingVisitId = null; // Resetear
                 renderDashboard();
                 renderHives();
             };
@@ -1178,7 +1192,6 @@
             }
         }
 
-        // --- DICTADO POR VOZ ---
         function startDictation() {
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1193,11 +1206,10 @@
                 };
                 recognition.start();
             } else {
-                showSamsungToast("Navegador no soporta dictado por voz");
+                showSamsungToast("Dictado no soportado por este navegador");
             }
         }
 
-        // --- HISTORIAL Y GRÁFICOS ---
         function openHiveHistory(hiveId) {
             document.getElementById('history-hive-title').innerText = `Historial: ${hiveId}`;
             const rawVisits = appData.visits.filter(v => v.hiveId === hiveId);
@@ -1312,7 +1324,6 @@
             });
         }
 
-        // --- DETALLE DE LA VISITA ---
         function showVisitDetail(visitId) {
             const visit = appData.visits.find(v => v.visitId === visitId);
             if (!visit) return;
@@ -1320,7 +1331,6 @@
             document.getElementById('visit-detail-title').innerText = `Inspección del ${visit.date}`;
             const body = document.getElementById('visit-detail-body');
             
-            // Asignar evento al botón de editar dentro del detalle
             const btnEdit = document.getElementById('btn-edit-from-detail');
             btnEdit.onclick = () => editInspection(visit.visitId);
 
@@ -1356,19 +1366,10 @@
                         groups[groupName].forEach(item => {
                             const f = item.f;
                             let detailsHTML = '';
-                            
-                            if (f.type) {
-                                detailsHTML += `<span style="color:var(--samsung-blue); font-weight:bold;">${f.type}</span><br>`;
-                            }
-                            if (f.broodPresence && f.broodPresence !== 'Sin cría') {
-                                detailsHTML += `Cría: ${f.broodPresence}<br>`;
-                            }
-                            if (f.honeyAmount && f.honeyAmount !== 'Nada') {
-                                detailsHTML += `Miel: ${f.honeyAmount}<br>`;
-                            }
-                            if (f.pollen && f.pollen !== 'Nada') {
-                                detailsHTML += `Polen: ${f.pollen}<br>`;
-                            }
+                            if (f.type) detailsHTML += `<span style="color:var(--samsung-blue); font-weight:bold;">${f.type}</span><br>`;
+                            if (f.broodPresence && f.broodPresence !== 'Sin cría') detailsHTML += `Cría: ${f.broodPresence}<br>`;
+                            if (f.honeyAmount && f.honeyAmount !== 'Nada') detailsHTML += `Miel: ${f.honeyAmount}<br>`;
+                            if (f.pollen && f.pollen !== 'Nada') detailsHTML += `Polen: ${f.pollen}<br>`;
 
                             framesContent += `
                                 <div class="frame-box inspected" style="font-size:9px; min-height:70px; height:auto; padding:4px 2px; line-height:1.15; overflow:hidden;">
@@ -1398,7 +1399,6 @@
             document.getElementById('visit-detail-modal').classList.remove('hidden');
         }
 
-        // --- INICIALIZACIÓN ---
         window.onload = checkSession;
     </script>
 </body>
