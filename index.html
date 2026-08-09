@@ -3,71 +3,306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gestión de Colmenares Pro</title>
+    <title>Gestión de Colmenares Pro - Samsung One UI</title>
     <!-- Librería Chart.js para Gráficos de Evolución -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Fuente SamsungOne / Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            --primary: #d4a373; --secondary: #faedcd; --dark: #333; --danger: #e63946;
-            --success: #2a9d8f; --bg: #fefae0; --info: #457b9d;
+            --samsung-blue: #0072CE;
+            --samsung-blue-dark: #0056A4;
+            --samsung-bg: #F4F6F9;
+            --samsung-card: #FFFFFF;
+            --samsung-dark: #1C1B1F;
+            --samsung-secondary: #70777E;
+            --samsung-danger: #E53935;
+            --samsung-success: #2E7D32;
+            --samsung-warning: #ED6C02;
+            --samsung-soft-blue: #E8F2FF;
+            --radius-card: 22px;
+            --radius-btn: 25px;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg); color: var(--dark); padding-bottom: 70px; }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'SamsungOne', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body { 
+            background-color: var(--samsung-bg); 
+            color: var(--samsung-dark); 
+            padding-bottom: 90px;
+            font-size: 15px;
+        }
         
-        /* Utilidades */
+        /* Utilidades UI Samsung */
         .hidden { display: none !important; }
-        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-info { background: var(--info); color: white; }
-        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        
+        .btn { 
+            padding: 14px 20px; 
+            border: none; 
+            border-radius: var(--radius-btn); 
+            font-weight: 700; 
+            width: 100%; 
+            font-size: 15px; 
+            cursor: pointer; 
+            margin-top: 12px; 
+            transition: all 0.2s ease;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--samsung-blue); color: white; }
+        .btn-primary:active { background: var(--samsung-blue-dark); }
+        .btn-danger { background: var(--samsung-danger); color: white; }
+        .btn-success { background: var(--samsung-success); color: white; }
+        .btn-info { background: var(--samsung-soft-blue); color: var(--samsung-blue); }
+
+        .card { 
+            background: var(--samsung-card); 
+            padding: 20px; 
+            border-radius: var(--radius-card); 
+            margin-bottom: 16px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); 
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--samsung-secondary);
+            margin-top: 10px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select, textarea { 
+            width: 100%; 
+            padding: 14px 16px; 
+            margin-bottom: 10px; 
+            border: 1px solid #E0E0E0; 
+            border-radius: 16px; 
+            font-size: 16px; 
+            background-color: #FAFAFA;
+            color: var(--samsung-dark);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--samsung-blue);
+            background-color: #FFFFFF;
+        }
         
         /* Botones de Selección Interactivos */
-        .toggle-btn-group { display: flex; gap: 10px; margin: 5px 0 15px; }
-        .toggle-btn { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; color: var(--dark); border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; font-size: 14px; }
-        .toggle-btn.active { background: var(--primary); color: white; }
+        .toggle-btn-group { display: flex; gap: 10px; margin: 8px 0 15px; }
+        .toggle-btn { 
+            flex: 1; 
+            padding: 12px; 
+            border: 1.5px solid #E0E0E0; 
+            background: white; 
+            color: var(--samsung-dark); 
+            border-radius: 18px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            text-align: center; 
+            font-size: 14px; 
+            transition: all 0.2s;
+        }
+        .toggle-btn.active { 
+            background: var(--samsung-blue); 
+            color: white; 
+            border-color: var(--samsung-blue);
+        }
 
-        /* Navegación */
-        nav { position: fixed; bottom: 0; width: 100%; background: var(--primary); display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
-        nav div { color: white; font-weight: bold; cursor: pointer; padding: 10px; text-align: center; font-size: 14px; }
+        /* Navegación estilo Samsung One UI */
+        nav { 
+            position: fixed; 
+            bottom: 15px; 
+            left: 5% ;
+            width: 90%; 
+            background: rgba(255, 255, 255, 0.92); 
+            backdrop-filter: blur(10px);
+            display: flex; 
+            justify-content: space-around; 
+            padding: 8px 0; 
+            border-radius: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 100; 
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        nav div { 
+            color: var(--samsung-secondary); 
+            font-size: 12px; 
+            font-weight: 500;
+            cursor: pointer; 
+            padding: 6px 16px; 
+            text-align: center; 
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+        nav div.active-nav {
+            color: var(--samsung-blue);
+            font-weight: 700;
+            background-color: var(--samsung-soft-blue);
+        }
         
-        /* Vistas */
-        .view { padding: 20px; }
-        .header { text-align: center; margin-bottom: 20px; font-size: 24px; color: var(--primary); font-weight: bold; }
+        /* Vistas & Headers estilo One UI */
+        .view { padding: 20px 16px; }
+        .header-container {
+            padding: 20px 8px 15px 8px;
+            margin-bottom: 10px;
+        }
+        .header-title { 
+            font-size: 28px; 
+            color: var(--samsung-dark); 
+            font-weight: 700; 
+            letter-spacing: -0.5px;
+        }
+        .header-subtitle {
+            font-size: 14px;
+            color: var(--samsung-secondary);
+            margin-top: 2px;
+        }
         
-        /* Alertas */
-        .alert-item { border-left: 5px solid var(--danger); background: #ffe6e6; padding: 10px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-        .dismiss-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; color: #999; margin-left: 10px; }
+        /* Alertas de Samsung */
+        .alert-item { 
+            background: #FFEBEE; 
+            border-radius: 16px;
+            padding: 14px; 
+            margin-bottom: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            color: #C62828;
+            font-size: 14px;
+        }
+        .dismiss-btn { 
+            background: transparent; 
+            border: none; 
+            font-size: 16px; 
+            cursor: pointer; 
+            color: #C62828; 
+            margin-left: 10px; 
+            padding: 4px;
+        }
 
         /* Cuadros Grid */
-        .frames-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 5px; margin-bottom: 10px; }
-        .frame-box { background: var(--secondary); border: 2px solid var(--primary); border-radius: 5px; height: 65px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; flex-direction: column; font-size: 11px; text-align: center; }
-        .frame-box.inspected { background: var(--success); color: white; border-color: #1e7168; }
+        .frames-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px; margin-bottom: 12px; }
+        .frame-box { 
+            background: #F0F4F8; 
+            border: 1px solid #D0D7DE; 
+            border-radius: 12px; 
+            height: 60px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 700; 
+            cursor: pointer; 
+            flex-direction: column; 
+            font-size: 12px; 
+            text-align: center; 
+            color: var(--samsung-dark);
+            transition: all 0.2s;
+        }
+        .frame-box.inspected { 
+            background: var(--samsung-blue); 
+            color: white; 
+            border-color: var(--samsung-blue-dark); 
+        }
         
-        /* Modales */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+        /* Modales Samsung One UI (Bottom Sheet) */
+        .modal { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.4); 
+            backdrop-filter: blur(4px);
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-end; 
+            z-index: 1000; 
+            transition: all 0.3s ease;
+        }
+        .modal-content { 
+            background: white; 
+            padding: 24px; 
+            border-top-left-radius: 28px; 
+            border-top-right-radius: 28px; 
+            width: 100%; 
+            max-width: 500px; 
+            max-height: 85vh; 
+            overflow-y: auto; 
+            animation: slideUp 0.3s ease-out;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-handle {
+            width: 40px;
+            height: 5px;
+            background: #E0E0E0;
+            border-radius: 10px;
+            margin: 0 auto 15px auto;
+        }
+
+        /* Notificación Toast Nativa Samsung */
+        #samsung-toast {
+            position: fixed;
+            bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 30, 30, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 2000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            text-align: center;
+            max-width: 85%;
+        }
         
         /* Tags & Previews */
-        .queen-color { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid #000; margin-left: 5px; vertical-align: middle; }
-        .photo-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-top: 10px; }
-        .history-entry { border-bottom: 1px solid #eee; padding: 12px 0; cursor: pointer; }
+        .queen-color { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2); margin-left: 5px; vertical-align: middle; }
+        .photo-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 16px; margin-top: 10px; }
+        .history-entry { border-bottom: 1px solid #F0F0F0; padding: 14px 0; cursor: pointer; }
         .history-entry:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
 
+    <!-- NOTIFICACIÓN TOAST SAMSUNG -->
+    <div id="samsung-toast" class="hidden"></div>
+
     <!-- VISTA: LOGIN -->
     <div id="login-view" class="view">
-        <div class="header">Gestión de Colmenares Pro</div>
+        <div class="header-container" style="text-align: center; margin-top: 40px;">
+            <div class="header-title">Colmenares Pro</div>
+            <div class="header-subtitle">Samsung Edition</div>
+        </div>
         <div class="card">
-            <h3>Iniciar Sesión</h3>
-            <input type="text" id="username" placeholder="Usuario" autocapitalize="none">
-            <input type="password" id="password" placeholder="Contraseña">
-            <button class="btn btn-primary" onclick="login()">Entrar</button>
-            <p id="login-error" style="color: red; margin-top: 10px;" class="hidden">Credenciales incorrectas.</p>
+            <h3 style="margin-bottom: 15px;">Iniciar Sesión</h3>
+            <label>Usuario</label>
+            <input type="text" id="username" placeholder="Ingresa tu usuario" autocapitalize="none">
+            <label>Contraseña</label>
+            <input type="password" id="password" placeholder="Ingresa tu contraseña">
+            <button class="btn btn-primary" onclick="login()">Iniciar sesión</button>
+            <p id="login-error" style="color: var(--samsung-danger); margin-top: 12px; font-size: 13px; text-align: center;" class="hidden">Credenciales incorrectas.</p>
         </div>
     </div>
 
@@ -76,45 +311,52 @@
         
         <!-- VISTA: DASHBOARD -->
         <div id="dashboard-view" class="view">
-            <div class="header">Panel de Control</div>
+            <div class="header-container">
+                <div class="header-title">Panel de Control</div>
+                <div class="header-subtitle">Estado general del colmenar</div>
+            </div>
             
             <div class="card">
-                <h3>⚠️ Alertas del Colmenar</h3>
-                <div id="alerts-container" style="margin-top: 10px;"></div>
+                <h3 style="margin-bottom: 12px; color: var(--samsung-dark);">⚠️ Alertas del Colmenar</h3>
+                <div id="alerts-container"></div>
             </div>
 
-            <div class="card" style="display: flex; justify-content: space-between; text-align: center;">
-                <div><h2 id="total-hives">0</h2><p>Colmenas</p></div>
-                <div><h2 id="total-alerts">0</h2><p>Avisos</p></div>
+            <div class="card" style="display: flex; justify-content: space-around; text-align: center; padding: 15px;">
+                <div><h2 id="total-hives" style="color: var(--samsung-blue); font-size: 28px;">0</h2><p style="font-size: 13px; color: var(--samsung-secondary);">Colmenas</p></div>
+                <div><h2 id="total-alerts" style="color: var(--samsung-danger); font-size: 28px;">0</h2><p style="font-size: 13px; color: var(--samsung-secondary);">Avisos</p></div>
             </div>
             
-            <button class="btn btn-info" onclick="requestNotificationPermission()">🔔 Activar Notificaciones Móviles</button>
+            <button class="btn btn-info" onclick="requestNotificationPermission()">🔔 Activar Notificaciones</button>
             <button class="btn btn-danger" onclick="logout()">Cerrar Sesión</button>
         </div>
 
         <!-- VISTA: MIS UNIDADES -->
         <div id="unidades-view" class="view hidden">
-            <div class="header">Mis Colmenas</div>
+            <div class="header-container">
+                <div class="header-title">Mis Colmenas</div>
+                <div class="header-subtitle">Listado de unidades registradas</div>
+            </div>
             <div id="hives-list"></div>
         </div>
 
-        <!-- VISTA: NUEVA UNIDAD -->
+        <!-- VISTA: NUEVA UNIDAD (MODIFICADA SEGÚN REQUERIMIENTO) -->
         <div id="nueva-unidad-view" class="view hidden">
-            <div class="header">Añadir Unidad</div>
+            <div class="header-container">
+                <div class="header-title">Añadir Unidad</div>
+                <div class="header-subtitle">Nuevo registro de colmenar</div>
+            </div>
             <div class="card">
-                <label>Tipo de Registro:</label>
-                <select id="new-hive-type" onchange="onTypeChange()">
-                    <option value="Colmena">Colmena (Predeterminado: 10 Cuadros)</option>
-                    <option value="Enjambre">Enjambre / Núcleo (Predeterminado: 5 Cuadros)</option>
+                <label>Tipo de Registro</label>
+                <select id="new-hive-type">
+                    <option value="Colmena">Colmena</option>
+                    <option value="Enjambre">Enjambre / Núcleo</option>
                 </select>
 
-                <label>Identificador de la Unidad:</label>
+                <label>Identificador de la Unidad</label>
                 <input type="text" id="new-hive-id" placeholder="Ej: M-023 o ENJ-01">
                 
-                
-                <label>Año de la Reina:</label>
+                <label>Año de la Reina</label>
                 <input type="number" id="new-hive-queen" placeholder="Ej: 2026" value="2026">
-                
                 
                 <button class="btn btn-primary" onclick="createHive()">Crear Registro</button>
             </div>
@@ -123,21 +365,22 @@
         <!-- MODAL DE INSPECCIÓN (VISITA) -->
         <div id="inspection-modal" class="modal hidden">
             <div class="modal-content">
-                <h2 id="ins-hive-title" style="margin-bottom: 15px; color: var(--primary);">Inspección</h2>
+                <div class="modal-handle"></div>
+                <h2 id="ins-hive-title" style="margin-bottom: 15px; color: var(--samsung-dark);">Inspección</h2>
                 
-                <div class="card" style="background: var(--secondary)">
-                    <strong>Última Visita:</strong> <span id="ins-prev-info">Sin datos previos.</span>
+                <div class="card" style="background: var(--samsung-soft-blue); padding: 12px 16px;">
+                    <strong style="color: var(--samsung-blue);">Última Visita:</strong> <span id="ins-prev-info" style="font-size: 13px;">Sin datos previos.</span>
                 </div>
 
-                <h3>1. Valoración General y Alzas</h3>
-                <label>Fuerza de la Colonia:</label>
+                <h3 style="margin-top: 15px; font-size: 16px;">1. Valoración General y Alzas</h3>
+                <label>Fuerza de la Colonia</label>
                 <select id="ins-force">
                     <option value="Fuerte">Fuerte</option>
                     <option value="Media">Media</option>
                     <option value="Débil">Débil</option>
                 </select>
 
-                <label>Número de Alzas Presentes/Añadidas (Máx 3):</label>
+                <label>Número de Alzas Presentes/Añadidas (Máx 3)</label>
                 <select id="ins-alzas" onchange="renderInspectionFrames()">
                     <option value="0">0 Alzas</option>
                     <option value="1">1 Alza (10 Cuadros)</option>
@@ -145,23 +388,23 @@
                     <option value="3">3 Alzas (30 Cuadros)</option>
                 </select>
 
-                <label>Comportamiento:</label>
+                <label>Comportamiento</label>
                 <select id="ins-behavior">
                     <option value="Tranquila">Tranquila</option>
                     <option value="Nerviosa">Nerviosa</option>
                     <option value="Agresiva">Agresiva</option>
                 </select>
                 
-                <h3 style="margin-top: 15px;">2. Estado de Cuadros (Cámara y Alzas)</h3>
-                <p style="font-size:12px; color:#666; margin-bottom:10px;">Toca cualquier cuadro para detallar su contenido:</p>
+                <h3 style="margin-top: 20px; font-size: 16px;">2. Estado de Cuadros</h3>
+                <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:10px;">Toca cualquier cuadro para detallar su contenido:</p>
                 
                 <!-- Contenedor dinámico de cuadros -->
                 <div id="frames-sections-container"></div>
 
-                <h3 style="margin-top: 15px;">3. Intervenciones</h3>
+                <h3 style="margin-top: 20px; font-size: 16px;">3. Intervenciones</h3>
                 
                 <!-- ALIMENTACIÓN -->
-                <label>Alimentación Suministrada:</label>
+                <label>Alimentación Suministrada</label>
                 <select id="ins-feed-type" onchange="toggleFeedProportion()">
                     <option value="Ninguna">Ninguna</option>
                     <option value="Sólido">Sólido</option>
@@ -170,7 +413,7 @@
                 </select>
 
                 <div id="feed-prop-container" class="hidden">
-                    <label style="font-size: 13px; font-weight: bold; color: var(--primary);">Proporción del Jarabe (Líquido):</label>
+                    <label>Proporción del Jarabe (Líquido)</label>
                     <div class="toggle-btn-group">
                         <div id="prop-1-1" class="toggle-btn active" onclick="setFeedProportion('1:1')">1:1</div>
                         <div id="prop-2-1" class="toggle-btn" onclick="setFeedProportion('2:1')">2:1</div>
@@ -178,34 +421,35 @@
                 </div>
 
                 <!-- PROTEÍNA -->
-                <label>Proteína:</label>
+                <label>Proteína</label>
                 <div class="toggle-btn-group">
                     <div id="protein-si" class="toggle-btn" onclick="setProtein('Sí')">Sí</div>
                     <div id="protein-no" class="toggle-btn active" onclick="setProtein('No')">No</div>
                 </div>
 
                 <!-- TRATAMIENTO SANITARIO -->
-                <label>Tratamiento Sanitario:</label>
+                <label>Tratamiento Sanitario</label>
                 <input type="text" id="ins-treatment" placeholder="Ej: Apivar, Varromed, etc.">
                 
-                <h3 style="margin-top: 15px;">4. Multimedia y Observaciones</h3>
-                <button class="btn" style="background: #e9c46a;" onclick="startDictation()">🎤 Dictar Observación</button>
+                <h3 style="margin-top: 20px; font-size: 16px;">4. Multimedia y Observaciones</h3>
+                <button class="btn btn-info" style="margin-bottom: 10px;" onclick="startDictation()">🎤 Dictar Observación</button>
                 <textarea id="ins-notes" rows="3" placeholder="Observaciones escritas o dictadas..."></textarea>
                 
-                <label>Adjuntar Fotografía:</label>
+                <label>Adjuntar Fotografía</label>
                 <input type="file" id="ins-photo-input" accept="image/*" capture="environment">
 
                 <button class="btn btn-success" onclick="finishInspection()">Guardar Inspección</button>
-                <button class="btn btn-danger" onclick="closeModal('inspection-modal')">Cancelar</button>
+                <button class="btn btn-danger" style="background: #888;" onclick="closeModal('inspection-modal')">Cancelar</button>
             </div>
         </div>
 
         <!-- MODAL DETALLE DE CUADRO -->
         <div id="frame-modal" class="modal hidden">
             <div class="modal-content">
-                <h3 id="frame-modal-title">Detalle del Cuadro</h3>
+                <div class="modal-handle"></div>
+                <h3 id="frame-modal-title" style="margin-bottom: 15px;">Detalle del Cuadro</h3>
                 
-                <label>Tipo de Cuadro:</label>
+                <label>Tipo de Cuadro</label>
                 <select id="frame-type">
                     <option value="Cuadro de cera estampada">Cuadro de cera estampada</option>
                     <option value="Cuadro estirado">Cuadro estirado</option>
@@ -215,14 +459,14 @@
                     <option value="Cuadro mixto">Cuadro mixto</option>
                 </select>
 
-                <label>Estado del Cuadro:</label>
+                <label>Estado del Cuadro</label>
                 <select id="frame-physical">
                     <option value="Buen Estado">Buen Estado</option>
                     <option value="Mal estado">Mal estado</option>
                     <option value="Viejo">Viejo</option>
                 </select>
 
-                <label>Cría:</label>
+                <label>Cría</label>
                 <select id="frame-brood-presence" onchange="toggleBroodQuality()">
                     <option value="Sin cría">Sin cría</option>
                     <option value="Cría abierta">Cría abierta</option>
@@ -231,7 +475,7 @@
                 </select>
 
                 <div id="frame-brood-quality-container" class="hidden">
-                    <label>Cantidad de Cría:</label>
+                    <label>Cantidad de Cría</label>
                     <select id="frame-brood-quality">
                         <option value="Escasa">Escasa</option>
                         <option value="Media">Media</option>
@@ -241,7 +485,7 @@
                     </select>
                 </div>
 
-                <label>Miel:</label>
+                <label>Miel</label>
                 <select id="frame-honey-amount">
                     <option value="Nada">Nada</option>
                     <option value="Poca">Poca</option>
@@ -249,7 +493,7 @@
                     <option value="Mucha">Mucha</option>
                 </select>
 
-                <label>Polen:</label>
+                <label>Polen</label>
                 <select id="frame-pollen">
                     <option value="Nada">Nada</option>
                     <option value="Poca">Poca</option>
@@ -261,14 +505,15 @@
             </div>
         </div>
 
-        <!-- MODAL HISTORIAL COMPLETO DE COLMENA Y GRÁFICOS DINÁMICOS -->
+        <!-- MODAL HISTORIAL COMPLETO DE COLMENA Y GRÁFICOS -->
         <div id="history-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 500px;">
-                <h2 id="history-hive-title" style="color: var(--primary);">Historial de la Colmena</h2>
+            <div class="modal-content">
+                <div class="modal-handle"></div>
+                <h2 id="history-hive-title" style="color: var(--samsung-dark); margin-bottom: 10px;">Historial de la Colmena</h2>
                 
-                <div class="card" style="margin-top: 10px;">
+                <div class="card" style="margin-top: 10px; padding: 15px;">
                     <h4 style="margin-bottom:8px;">📈 Evolución Gráfica</h4>
-                    <label style="font-size:12px; font-weight:bold;">Métrica a Analizar:</label>
+                    <label>Métrica a Analizar</label>
                     <select id="chart-metric-select" onchange="updateHistoryChart()" style="margin-bottom:10px;">
                         <option value="fuerza">Estado / Fuerza de la Colmena</option>
                         <option value="alzas">Número de Alzas</option>
@@ -277,32 +522,33 @@
                         <option value="inspeccionados">Cuadros Inspeccionados</option>
                         <option value="renovar">Cuadros para Renovar / Viejos</option>
                     </select>
-                    <div style="position: relative; height:200px; width:100%;">
+                    <div style="position: relative; height:180px; width:100%;">
                         <canvas id="evolutionChart"></canvas>
                     </div>
                 </div>
 
-                <h3>Registros e Inspecciones</h3>
+                <h3 style="font-size: 16px; margin-top: 15px;">Registros e Inspecciones</h3>
                 <div id="history-list" style="margin-top: 10px;"></div>
 
-                <button class="btn btn-danger" onclick="closeModal('history-modal')">Cerrar</button>
+                <button class="btn btn-danger" style="background: #888;" onclick="closeModal('history-modal')">Cerrar</button>
             </div>
         </div>
 
         <!-- MODAL DETALLE DE INSPECCIÓN INDIVIDUAL -->
         <div id="visit-detail-modal" class="modal hidden">
             <div class="modal-content">
-                <h3 id="visit-detail-title">Detalle de Inspección</h3>
-                <div id="visit-detail-body" style="margin-top: 10px;"></div>
+                <div class="modal-handle"></div>
+                <h3 id="visit-detail-title" style="margin-bottom: 15px;">Detalle de Inspección</h3>
+                <div id="visit-detail-body"></div>
                 <button class="btn btn-primary" onclick="closeModal('visit-detail-modal')">Volver al Historial</button>
             </div>
         </div>
 
-        <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+        <!-- BARRA DE NAVEGACIÓN INFERIOR SAMSUNG -->
         <nav>
-            <div onclick="showView('dashboard-view')">📊<br>Panel</div>
-            <div onclick="showView('unidades-view'); renderHives();">🐝<br>Colmenas</div>
-            <div onclick="showView('nueva-unidad-view')">➕<br>Nueva</div>
+            <div id="nav-dash" class="active-nav" onclick="showView('dashboard-view', 'nav-dash')">📊<br>Panel</div>
+            <div id="nav-unid" onclick="showView('unidades-view', 'nav-unid'); renderHives();">🐝<br>Colmenas</div>
+            <div id="nav-nueva" onclick="showView('nueva-unidad-view', 'nav-nueva')">➕<br>Nueva</div>
         </nav>
     </div>
 
@@ -319,9 +565,20 @@
         let currentHistoryVisits = [];
         let chartInstance = null;
 
-        // Variables de estado temporal para las intervenciones
+        // Variables de estado temporal
         let selectedFeedProportion = '1:1';
         let selectedProtein = 'No';
+
+        function showSamsungToast(message) {
+            const toast = document.getElementById('samsung-toast');
+            toast.innerText = message;
+            toast.classList.remove('hidden');
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
 
         function getQueenColor(year) {
             const lastDigit = year.toString().slice(-1);
@@ -354,6 +611,7 @@
                 localStorage.setItem('colmenares_session', 'active');
                 document.getElementById('login-error').classList.add('hidden');
                 checkSession();
+                showSamsungToast("Sesión iniciada correctamente");
             } else {
                 document.getElementById('login-error').classList.remove('hidden');
             }
@@ -369,11 +627,11 @@
             if ("Notification" in window) {
                 Notification.requestPermission().then(permission => {
                     if (permission === "granted") {
-                        alert("Notificaciones activadas con éxito.");
+                        showSamsungToast("Notificaciones Samsung activadas");
                     }
                 });
             } else {
-                alert("Este navegador no soporta notificaciones nativas.");
+                showSamsungToast("Navegador no soporta notificaciones");
             }
         }
 
@@ -396,34 +654,31 @@
         }
 
         // --- NAVEGACIÓN ---
-        function showView(viewId) {
+        function showView(viewId, navId) {
             document.querySelectorAll('#main-app .view').forEach(v => v.classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
+            
+            if(navId) {
+                document.querySelectorAll('nav div').forEach(n => n.classList.remove('active-nav'));
+                document.getElementById(navId).classList.add('active-nav');
+            }
         }
 
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
         }
 
-        // --- TIPO DE REGISTRO (ENJAMBRE VS COLMENA) ---
-        function onTypeChange() {
-            const type = document.getElementById('new-hive-type').value;
-            const framesInput = document.getElementById('new-hive-frames');
-            if (type === 'Enjambre') {
-                framesInput.value = 5;
-            } else {
-                framesInput.value = 10;
-            }
-        }
-
+        // --- CREACIÓN DE NUEVA UNIDAD (MODIFICADO) ---
         function createHive() {
-            const id = document.getElementById('new-hive-id').value;
+            const id = document.getElementById('new-hive-id').value.trim();
             const type = document.getElementById('new-hive-type').value;
-            const state = document.getElementById('new-hive-state').value;
             const queenYear = parseInt(document.getElementById('new-hive-queen').value) || 2026;
-            const numFrames = parseInt(document.getElementById('new-hive-frames').value) || 10;
+            
+            // Asignación automática de cuadros y estado inicial predeterminado
+            const numFrames = (type === 'Enjambre') ? 5 : 10;
+            const state = "Activa";
 
-            if (!id) return alert("Por favor, introduce un identificador.");
+            if (!id) return showSamsungToast("Introduce un identificador válido");
 
             let frames = [];
             for (let i = 0; i < numFrames; i++) {
@@ -442,9 +697,9 @@
 
             appData.hives.push(newHive);
             saveData();
-            alert(`${type} registrada correctamente con ${numFrames} cuadros.`);
+            showSamsungToast(`${type} registrada con éxito`);
             document.getElementById('new-hive-id').value = '';
-            showView('unidades-view');
+            showView('unidades-view', 'nav-unid');
             renderHives();
             renderDashboard();
         }
@@ -459,14 +714,13 @@
                 div.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div onclick="openHiveHistory('${hive.hiveId}')" style="cursor:pointer; flex-grow:1;">
-                            <h3 style="margin-bottom:5px;">${hive.hiveId} <span style="font-size:12px; font-weight:normal; color:#666;">(${hive.type || 'Colmena'})</span></h3>
-                            <p style="font-size:13px; color:#555;">
+                            <h3 style="margin-bottom:4px; font-size:18px;">${hive.hiveId} <span style="font-size:12px; color:var(--samsung-secondary);">(${hive.type || 'Colmena'})</span></h3>
+                            <p style="font-size:13px; color:var(--samsung-secondary);">
                                 Estado: <strong>${hive.state}</strong> | Alzas: <strong>${hive.alzas || 0}</strong><br>
                                 Reina: ${hive.queenYear} <span class="queen-color" style="background:${queenColor}"></span>
                             </p>
-                            <p style="font-size:11px; color:var(--info); margin-top:4px;">🔍 Toca para ver historial y gráfico</p>
                         </div>
-                        <button class="btn btn-primary" style="width: auto; padding: 10px 15px; margin-top:0;" onclick="openInspection(${index})">Inspeccionar</button>
+                        <button class="btn btn-primary" style="width: auto; padding: 10px 18px; margin-top:0;" onclick="openInspection(${index})">Inspeccionar</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -483,7 +737,6 @@
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
 
-            // 1. Reinas antiguas e Inspecciones pendientes
             appData.hives.forEach(hive => {
                 const alertKeyOldQueen = `queen_${hive.hiveId}`;
                 if (2026 - hive.queenYear >= 2 && !appData.dismissedAlerts.includes(alertKeyOldQueen)) {
@@ -497,28 +750,27 @@
                         const lastDate = new Date(hive.lastVisit);
                         const diffDays = Math.ceil(Math.abs(today - lastDate) / (1000 * 60 * 60 * 24));
                         if (diffDays > 30) {
-                            addAlertUI(alertsContainer, alertKeyNoVisit, `<strong>${hive.hiveId}</strong> lleva ${diffDays} días sin ser inspeccionada.`);
+                            addAlertUI(alertsContainer, alertKeyNoVisit, `<strong>${hive.hiveId}</strong> lleva ${diffDays} días sin inspeccionar.`);
                             activeAlertsCount++;
                         }
                     } else {
-                        addAlertUI(alertsContainer, alertKeyNoVisit, `<strong>${hive.hiveId}</strong> no tiene visitas registradas.`);
+                        addAlertUI(alertsContainer, alertKeyNoVisit, `<strong>${hive.hiveId}</strong> sin visitas registradas.`);
                         activeAlertsCount++;
                     }
                 }
             });
 
-            // 2. Alertas Programadas por Semanas de Tratamiento Sanitario
             if (appData.reminders) {
                 appData.reminders.forEach(rem => {
                     if (!appData.dismissedAlerts.includes(rem.id) && todayStr >= rem.targetDate) {
-                        addAlertUI(alertsContainer, rem.id, `💊 <strong>Tratamiento en ${rem.hiveId}</strong>: Revisar / retirar "${rem.treatment}" (Programado para el ${rem.targetDate}).`);
+                        addAlertUI(alertsContainer, rem.id, `💊 <strong>Tratamiento en ${rem.hiveId}</strong>: Revisar "${rem.treatment}".`);
                         activeAlertsCount++;
                     }
                 });
             }
 
             if (activeAlertsCount === 0) {
-                alertsContainer.innerHTML = '<p style="color:var(--success);">✅ No hay alertas pendientes.</p>';
+                alertsContainer.innerHTML = '<p style="color:var(--samsung-success); font-size:14px;">✅ No hay alertas pendientes.</p>';
             }
             document.getElementById('total-alerts').innerText = activeAlertsCount;
         }
@@ -528,10 +780,9 @@
             div.className = 'alert-item';
             div.innerHTML = `
                 <div>${messageHTML}</div>
-                <button class="dismiss-btn" onclick="dismissAlert('${alertId}')" title="Descartar Alerta">❌</button>
+                <button class="dismiss-btn" onclick="dismissAlert('${alertId}')" title="Descartar">✕</button>
             `;
             container.appendChild(div);
-            triggerNotification("Alerta en Colmenar", messageHTML.replace(/<[^>]*>?/gm, ''));
         }
 
         function dismissAlert(alertId) {
@@ -539,10 +790,11 @@
                 appData.dismissedAlerts.push(alertId);
                 saveData();
                 renderDashboard();
+                showSamsungToast("Alerta descartada");
             }
         }
 
-        // --- CONTROLADORES DE INTERVENCIONES (ALIMENTACIÓN Y PROTEÍNA) ---
+        // --- CONTROLADORES DE INTERVENCIONES ---
         function toggleFeedProportion() {
             const feedType = document.getElementById('ins-feed-type').value;
             const container = document.getElementById('feed-prop-container');
@@ -565,7 +817,7 @@
             document.getElementById('protein-no').classList.toggle('active', val === 'No');
         }
 
-        // --- INSPECCIÓN Y CONTROL DE CUADROS ---
+        // --- INSPECCIÓN Y CUADROS ---
         function openInspection(hiveIndex) {
             const hive = appData.hives[hiveIndex];
             currentInspection = { hiveId: hive.hiveId, hiveIndex: hiveIndex, frames: {}, photoBase64: null };
@@ -583,7 +835,6 @@
 
             renderInspectionFrames();
 
-            // Reseteo de campos de Intervenciones
             document.getElementById('ins-feed-type').value = 'Ninguna';
             toggleFeedProportion();
             setFeedProportion('1:1');
@@ -602,9 +853,8 @@
             const container = document.getElementById('frames-sections-container');
             container.innerHTML = '';
 
-            // Cámara de Cría
             const camaraDiv = document.createElement('div');
-            camaraDiv.innerHTML = `<h4 style="margin:10px 0 5px; color:var(--primary);">Cámara de Cría (${hive.frames.length} Cuadros)</h4>`;
+            camaraDiv.innerHTML = `<h4 style="margin:10px 0 5px; font-size:14px; color:var(--samsung-blue);">Cámara de Cría (${hive.frames.length} Cuadros)</h4>`;
             const camaraGrid = document.createElement('div');
             camaraGrid.className = 'frames-grid';
             for (let i = 1; i <= hive.frames.length; i++) {
@@ -620,10 +870,9 @@
             camaraDiv.appendChild(camaraGrid);
             container.appendChild(camaraDiv);
 
-            // Alzas
             for (let a = 1; a <= numAlzas; a++) {
                 const alzaDiv = document.createElement('div');
-                alzaDiv.innerHTML = `<h4 style="margin:15px 0 5px; color:var(--primary);">Alza ${a} (10 Cuadros)</h4>`;
+                alzaDiv.innerHTML = `<h4 style="margin:15px 0 5px; font-size:14px; color:var(--samsung-blue);">Alza ${a} (10 Cuadros)</h4>`;
                 const alzaGrid = document.createElement('div');
                 alzaGrid.className = 'frames-grid';
                 for (let i = 1; i <= 10; i++) {
@@ -701,7 +950,6 @@
             const fileInput = document.getElementById('ins-photo-input');
             const treatmentText = document.getElementById('ins-treatment').value.trim();
 
-            // Construir texto de Alimentación
             const feedType = document.getElementById('ins-feed-type').value;
             let finalFeedText = feedType;
             if (feedType === 'Líquido' || feedType === 'Ambos') {
@@ -726,14 +974,13 @@
                     frameDetails: currentInspection.frames
                 };
 
-                // PROGRAMACIÓN DE ALERTA DE TRATAMIENTO SANITARIO (EN SEMANAS)
                 if (treatmentText !== '') {
-                    const weeksInput = prompt(`Has anotado un tratamiento sanitario:\n"${treatmentText}"\n\n¿En cuántas SEMANAS quieres programar la alerta para revisar/retirar? (Ej: 1, 2, 4, 6 semanas)`, "2");
+                    const weeksInput = prompt(`Tratamiento: "${treatmentText}"\n¿En cuántas SEMANAS programar alerta?`, "2");
                     if (weeksInput !== null) {
                         const weeks = parseInt(weeksInput, 10);
                         if (!isNaN(weeks) && weeks >= 0) {
                             const targetDate = new Date();
-                            targetDate.setDate(targetDate.getDate() + (weeks * 7)); // Conversión a días
+                            targetDate.setDate(targetDate.getDate() + (weeks * 7));
                             const targetStr = targetDate.toISOString().split('T')[0];
 
                             if (!appData.reminders) appData.reminders = [];
@@ -754,7 +1001,7 @@
 
                 saveData();
                 closeModal('inspection-modal');
-                alert("Inspección guardada correctamente.");
+                showSamsungToast("Inspección guardada correctamente");
                 renderDashboard();
                 renderHives();
             };
@@ -775,7 +1022,7 @@
                 const recognition = new SpeechRecognition();
                 recognition.lang = 'es-ES';
                 
-                recognition.onstart = () => alert("Dictado activado. Habla ahora...");
+                recognition.onstart = () => showSamsungToast("Dictado activado. Habla ahora...");
                 recognition.onresult = (e) => {
                     const text = e.results[0][0].transcript;
                     const area = document.getElementById('ins-notes');
@@ -783,11 +1030,11 @@
                 };
                 recognition.start();
             } else {
-                alert("Navegador no compatible con dictado por voz. Usa Google Chrome en Android.");
+                showSamsungToast("Navegador no soporta dictado por voz");
             }
         }
 
-        // --- HISTORIAL Y GRÁFICOS PERSONALIZADOS (CHART.JS) ---
+        // --- HISTORIAL Y GRÁFICOS ---
         function openHiveHistory(hiveId) {
             document.getElementById('history-hive-title').innerText = `Historial: ${hiveId}`;
             const rawVisits = appData.visits.filter(v => v.hiveId === hiveId);
@@ -797,7 +1044,7 @@
             listContainer.innerHTML = '';
 
             if (currentHistoryVisits.length === 0) {
-                listContainer.innerHTML = '<p>No hay inspecciones registradas para esta unidad.</p>';
+                listContainer.innerHTML = '<p style="font-size:13px; color:var(--samsung-secondary);">No hay inspecciones registradas.</p>';
             } else {
                 [...currentHistoryVisits].reverse().forEach(visit => {
                     const div = document.createElement('div');
@@ -805,7 +1052,7 @@
                     div.onclick = () => showVisitDetail(visit.visitId);
                     div.innerHTML = `
                         <strong>📅 ${visit.date}</strong> - Fuerza: <strong>${visit.force}</strong> | Alzas: ${visit.alzas || 0}
-                        <br><span style="font-size:12px; color:#666;">${visit.notes ? visit.notes.substring(0, 40) + '...' : 'Sin notas'}</span>
+                        <br><span style="font-size:12px; color:var(--samsung-secondary);">${visit.notes ? visit.notes.substring(0, 40) + '...' : 'Sin notas'}</span>
                     `;
                     listContainer.appendChild(div);
                 });
@@ -861,7 +1108,7 @@
                     });
                     break;
                 case 'renovar':
-                    labelText = 'Cuadros Para Renovar / Viejos';
+                    labelText = 'Cuadros Viejos/Mal estado';
                     dataPoints = currentHistoryVisits.map(v => {
                         if (!v.frameDetails) return 0;
                         return Object.values(v.frameDetails).filter(f => f.physical === 'Mal estado' || f.physical === 'Viejo').length;
@@ -878,10 +1125,10 @@
                     datasets: [{
                         label: labelText,
                         data: dataPoints,
-                        borderColor: '#d4a373',
-                        backgroundColor: 'rgba(212, 163, 115, 0.25)',
+                        borderColor: '#0072CE',
+                        backgroundColor: 'rgba(0, 114, 206, 0.15)',
                         borderWidth: 2,
-                        pointBackgroundColor: '#2a9d8f',
+                        pointBackgroundColor: '#0056A4',
                         pointRadius: 4,
                         fill: true,
                         tension: 0.3
@@ -891,17 +1138,12 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { 
-                            min: minY, 
-                            max: maxY, 
-                            ticks: { precision: 0 } 
-                        }
+                        y: { min: minY, max: maxY, ticks: { precision: 0 } }
                     }
                 }
             });
         }
 
-        // Muestra el detalle completo de la inspección
         function showVisitDetail(visitId) {
             const visit = appData.visits.find(v => v.visitId === visitId);
             if (!visit) return;
@@ -936,35 +1178,27 @@
 
                 Object.keys(groups).forEach(groupName => {
                     if (groups[groupName].length > 0) {
-                        framesContent += `<h5 style="margin-top:10px; margin-bottom:5px; color:var(--primary);">${groupName}</h5>`;
+                        framesContent += `<h5 style="margin-top:10px; margin-bottom:5px; color:var(--samsung-blue); font-size:13px;">${groupName}</h5>`;
                         framesContent += '<div class="frames-grid">';
                         groups[groupName].forEach(item => {
                             const f = item.f;
                             let detailsHTML = '';
-                            
-                            if (f.type) detailsHTML += `<span style="color:#d4a373; font-weight:bold;">${f.type}</span><br>`;
-                            if (f.broodPresence && f.broodPresence !== 'Sin cría') {
-                                detailsHTML += `Cría: ${f.broodPresence} (${f.broodQuality || ''})<br>`;
-                            }
-                            if (f.honeyAmount && f.honeyAmount !== 'Nada') {
-                                detailsHTML += `Miel: ${f.honeyAmount}<br>`;
-                            }
-                            if (f.pollen && f.pollen !== 'Nada') {
-                                detailsHTML += `Polen: ${f.pollen}<br>`;
-                            }
+                            if (f.type) detailsHTML += `<span style="color:var(--samsung-blue); font-weight:bold;">${f.type}</span><br>`;
+                            if (f.broodPresence && f.broodPresence !== 'Sin cría') detailsHTML += `Cría: ${f.broodPresence}<br>`;
+                            if (f.honeyAmount && f.honeyAmount !== 'Nada') detailsHTML += `Miel: ${f.honeyAmount}<br>`;
+                            if (f.pollen && f.pollen !== 'Nada') detailsHTML += `Polen: ${f.pollen}<br>`;
                             if (f.physical) detailsHTML += `Estado: ${f.physical}`;
 
                             framesContent += `
-                                <div class="frame-box inspected" style="font-size:8px; height:85px; padding:2px; line-height:1.1; overflow:hidden;">
-                                    <strong>${item.label}</strong><br>
-                                    ${detailsHTML}
+                                <div class="frame-box inspected" style="font-size:9px; height:80px; padding:2px; line-height:1.1; overflow:hidden;">
+                                    <strong>${item.label}</strong><br>${detailsHTML}
                                 </div>`;
                         });
                         framesContent += '</div>';
                     }
                 });
             } else {
-                framesContent = '<p style="font-size:12px; color:#777;">No se detallaron cuadros en esta visita.</p>';
+                framesContent = '<p style="font-size:12px; color:var(--samsung-secondary);">No se detallaron cuadros en esta visita.</p>';
             }
 
             body.innerHTML = `
@@ -975,7 +1209,7 @@
                 <p><strong>Proteína:</strong> ${visit.protein || 'No'}</p>
                 <p><strong>Tratamiento:</strong> ${visit.treatment || 'Ninguno'}</p>
                 <p><strong>Observaciones:</strong> ${visit.notes || 'Sin observaciones'}</p>
-                <h4 style="margin-top:10px;">Estado de Cuadros Inspeccionados:</h4>
+                <h4 style="margin-top:12px; font-size:14px;">Cuadros Inspeccionados:</h4>
                 ${framesContent}
                 ${visit.photo ? `<h4 style="margin-top:10px;">Fotografía:</h4><img src="${visit.photo}" class="photo-preview">` : ''}
             `;
