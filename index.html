@@ -7,20 +7,77 @@
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#d97706">
+    <!-- Chart.js CDN para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
         <h1>🐝 ApiLab PWA</h1>
-        <p>Gestión Apícola Inteligente</p>
+        <p>Gestión, Inspección por Voz y Estadísticas</p>
     </header>
 
     <main>
-        <section id="welcome-card" class="card">
-            <h2>Estado del Sistema</h2>
-            <p>PWA configurada correctamente. ¡Listo para comenzar el desarrollo iterativo!</p>
-            <button id="install-btn" style="display: none;">Instalar Aplicación</button>
+        <!-- Panel de Control Global y Exportación -->
+        <section class="card" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h2 style="margin: 0 0 0.3rem 0;">Datos del Colmenar</h2>
+                <p style="margin: 0; font-size: 0.85rem; color: #4b5563;">Exporta tu historial completo en formato CSV.</p>
+            </div>
+            <button id="export-btn" class="btn-secondary" style="width: auto; margin-top: 0;">📥 Exportar a CSV</button>
+        </section>
+
+        <!-- Formulario de Creación -->
+        <section class="card">
+            <h2>Registrar Nueva Unidad</h2>
+            <form id="hive-form">
+                <div class="form-group">
+                    <label for="hive-name">Nombre / Identificador:</label>
+                    <input type="text" id="hive-name" required placeholder="Ej. Colmena 01 / Enjambre Norte">
+                </div>
+                
+                <div class="form-group">
+                    <label for="hive-type">Tipo de Unidad:</label>
+                    <select id="hive-type">
+                        <option value="Colmena">Colmena (Base: 10 cuadros)</option>
+                        <option value="Enjambre">Enjambre (Base: 5 cuadros)</option>
+                    </select>
+                </div>
+
+                <button type="submit">Crear Unidad</button>
+            </form>
+        </section>
+
+        <!-- Listado de Unidades -->
+        <section class="card" style="margin-top: 1.5rem;">
+            <h2>Mis Colmenas y Enjambres</h2>
+            <div id="hives-container">
+                <p class="empty-msg">No hay unidades registradas todavía.</p>
+            </div>
         </section>
     </main>
+
+    <!-- Modal de Inspección y Estadísticas -->
+    <div id="inspection-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-btn" id="close-modal">&times;</span>
+            <h2 id="modal-title">Inspección</h2>
+            
+            <div class="speech-control">
+                <button id="speech-btn" class="btn-voice">🎤 Activar Control por Voz</button>
+                <p id="speech-status" class="speech-status">Micrófono inactivo</p>
+                <small class="speech-hint">Di: <em>"Cuadro 1 miel"</em>, <em>"Cuadro 2 cría reciente"</em>, etc.</small>
+            </div>
+
+            <!-- Contenedor para Gráfico de Estadísticas de la Colmena -->
+            <div class="chart-container" style="position: relative; height:200px; width:100%; margin-top: 1.5rem;">
+                <canvas id="hive-stats-chart"></canvas>
+            </div>
+
+            <div id="inspection-frames-container" style="margin-top: 1.5rem;">
+                <!-- Cuadros detallados -->
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
