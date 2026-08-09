@@ -366,14 +366,14 @@
             </div>
         </div>
 
-        <!-- MODAL DE INSPECCIÓN (VISITA) -->
+        <!-- MODAL DE INSPECCIÓN (VISITA / EDICIÓN) -->
         <div id="inspection-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-handle"></div>
                 <h2 id="ins-hive-title" style="margin-bottom: 15px; color: var(--samsung-dark);">Inspección</h2>
                 
                 <div class="card" style="background: var(--samsung-soft-blue); padding: 12px 16px;">
-                    <strong style="color: var(--samsung-blue);">Última Visita:</strong> <span id="ins-prev-info" style="font-size: 13px;">Sin datos previos.</span>
+                    <strong style="color: var(--samsung-blue);">Información:</strong> <span id="ins-prev-info" style="font-size: 13px;">Sin datos previos.</span>
                 </div>
 
                 <h3 style="margin-top: 15px; font-size: 16px;">1. Valoración General y Alzas</h3>
@@ -439,7 +439,7 @@
                 <button class="btn btn-info" style="margin-bottom: 10px;" onclick="startDictation()">🎤 Dictar Observación</button>
                 <textarea id="ins-notes" rows="3" placeholder="Observaciones escritas o dictadas..."></textarea>
                 
-                <label>Adjuntar Fotografía</label>
+                <label>Adjuntar/Cambiar Fotografía</label>
                 <input type="file" id="ins-photo-input" accept="image/*" capture="environment">
 
                 <button class="btn btn-success" onclick="finishInspection()">Guardar Inspección</button>
@@ -544,7 +544,9 @@
                 <div class="modal-handle"></div>
                 <h3 id="visit-detail-title" style="margin-bottom: 15px;">Detalle de Inspección</h3>
                 <div id="visit-detail-body"></div>
-                <button class="btn btn-primary" onclick="closeModal('visit-detail-modal')">Volver al Historial</button>
+                
+                <button class="btn btn-primary" id="btn-edit-from-detail" style="margin-top: 15px;">✏️ Editar Registro</button>
+                <button class="btn btn-info" onclick="closeModal('visit-detail-modal')">Volver al Historial</button>
             </div>
         </div>
 
@@ -565,6 +567,7 @@
             reminders: []
         };
         let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, photoBase64: null };
+        let editingVisitId = null; // Variable para controlar si editamos una visita existente
         let currentFrameKey = null;
         let currentHistoryVisits = [];
         let chartInstance = null;
@@ -693,7 +696,6 @@
                     return;
                 }
 
-                // Asignación automática de cuadros y estado inicial
                 const numFrames = (type === 'Enjambre') ? 5 : 10;
                 const state = "Activa";
 
@@ -712,7 +714,6 @@
                     lastVisit: null
                 };
 
-                // Asegurar inicialización previa a inserción
                 if (!Array.isArray(appData.hives)) appData.hives = [];
 
                 appData.hives.push(newHive);
@@ -749,7 +750,6 @@
             if (confirm("¿Estás seguro de que deseas borrar este registro de inspección?")) {
                 appData.visits = appData.visits.filter(v => v.visitId !== visitId);
                 
-                // Recalcular la fecha de última visita para la colmena
                 const remainingVisits = appData.visits.filter(v => v.hiveId === hiveId);
                 const hiveObj = appData.hives.find(h => h.hiveId === hiveId);
                 if (hiveObj) {
@@ -896,24 +896,27 @@
             document.getElementById('protein-no').classList.toggle('active', val === 'No');
         }
 
-        // --- INSPECCIÓN Y CUADROS ---
+        // --- APERTURA DE MODAL PARA NUEVA INSPECCIÓN ---
         function openInspection(hiveIndex) {
+            editingVisitId = null; // Modo Nueva Inspección
             const hive = appData.hives[hiveIndex];
             currentInspection = { hiveId: hive.hiveId, hiveIndex: hiveIndex, frames: {}, photoBase64: null };
             
-            document.getElementById('ins-hive-title').innerText = `Inspección: ${hive.hiveId}`;
+            document.getElementById('ins-hive-title').innerText = `Nueva Inspección: ${hive.hiveId}`;
             document.getElementById('ins-alzas').value = hive.alzas || 0;
             
             const prevVisits = appData.visits.filter(v => v.hiveId === hive.hiveId);
             if (prevVisits.length > 0) {
                 const last = prevVisits[prevVisits.length - 1];
-                document.getElementById('ins-prev-info').innerText = `${last.date} - Fuerza: ${last.force} | Alzas: ${last.alzas || 0}`;
+                document.getElementById('ins-prev-info').innerText = `Última visita (${last.date}): Fuerza ${last.force} | Alzas ${last.alzas || 0}`;
             } else {
                 document.getElementById('ins-prev-info').innerText = 'Sin visitas previas.';
             }
 
             renderInspectionFrames();
 
+            document.getElementById('ins-force').value = 'Fuerte';
+            document.getElementById('ins-behavior').value = 'Tranquila';
             document.getElementById('ins-feed-type').value = 'Ninguna';
             toggleFeedProportion();
             setFeedProportion('1:1');
@@ -922,6 +925,55 @@
             document.getElementById('ins-notes').value = '';
             document.getElementById('ins-photo-input').value = '';
 
+            document.getElementById('inspection-modal').classList.remove('hidden');
+        }
+
+        // --- APERTURA DE MODAL PARA EDITAR INSPECCIÓN EXISTENTE ---
+        function editInspection(visitId) {
+            const visit = appData.visits.find(v => v.visitId === visitId);
+            if (!visit) return;
+
+            editingVisitId = visitId; // Modo Edición
+            const hiveIndex = appData.hives.findIndex(h => h.hiveId === visit.hiveId);
+            
+            currentInspection = { 
+                hiveId: visit.hiveId, 
+                hiveIndex: hiveIndex, 
+                frames: JSON.parse(JSON.stringify(visit.frameDetails || {})), 
+                photoBase64: visit.photo || null 
+            };
+
+            document.getElementById('ins-hive-title').innerText = `Editar Inspección: ${visit.hiveId}`;
+            document.getElementById('ins-prev-info').innerHTML = `📅 Fecha de registro: <strong>${visit.date}</strong> (Fecha fija, no editable)`;
+
+            // Cargar valores existentes
+            document.getElementById('ins-force').value = visit.force || 'Fuerte';
+            document.getElementById('ins-alzas').value = visit.alzas || 0;
+            document.getElementById('ins-behavior').value = visit.behavior || 'Tranquila';
+
+            // Cargar alimentación
+            let feedType = 'Ninguna';
+            let prop = '1:1';
+            if (visit.feed) {
+                if (visit.feed.includes('Líquido')) feedType = 'Líquido';
+                else if (visit.feed.includes('Ambos')) feedType = 'Ambos';
+                else if (visit.feed.includes('Sólido')) feedType = 'Sólido';
+
+                if (visit.feed.includes('2:1')) prop = '2:1';
+                else if (visit.feed.includes('1:1')) prop = '1:1';
+            }
+            document.getElementById('ins-feed-type').value = feedType;
+            toggleFeedProportion();
+            setFeedProportion(prop);
+
+            setProtein(visit.protein || 'No');
+            document.getElementById('ins-treatment').value = visit.treatment || '';
+            document.getElementById('ins-notes').value = visit.notes || '';
+            document.getElementById('ins-photo-input').value = '';
+
+            renderInspectionFrames();
+
+            closeModal('visit-detail-modal');
             document.getElementById('inspection-modal').classList.remove('hidden');
         }
 
@@ -1024,8 +1076,6 @@
 
         function finishInspection() {
             const hiveIndex = appData.hives.findIndex(h => h.hiveId === currentInspection.hiveId);
-            const todayObj = new Date();
-            const todayStr = todayObj.toISOString().split('T')[0];
             const fileInput = document.getElementById('ins-photo-input');
             const treatmentText = document.getElementById('ins-treatment').value.trim();
 
@@ -1038,22 +1088,52 @@
             const completeSave = (photoData) => {
                 const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
 
-                const visitData = {
-                    visitId: generateID(),
-                    hiveId: currentInspection.hiveId,
-                    date: todayStr,
-                    force: document.getElementById('ins-force').value,
-                    alzas: numAlzas,
-                    behavior: document.getElementById('ins-behavior').value,
-                    feed: finalFeedText,
-                    protein: selectedProtein,
-                    treatment: treatmentText,
-                    notes: document.getElementById('ins-notes').value,
-                    photo: photoData,
-                    frameDetails: currentInspection.frames
-                };
+                if (editingVisitId) {
+                    // --- MODO EDICIÓN ---
+                    const visitIndex = appData.visits.findIndex(v => v.visitId === editingVisitId);
+                    if (visitIndex !== -1) {
+                        const originalDate = appData.visits[visitIndex].date; // Mantener la fecha original intacta
+                        
+                        appData.visits[visitIndex] = {
+                            visitId: editingVisitId,
+                            hiveId: currentInspection.hiveId,
+                            date: originalDate, // MANTENER FECHA ORIGINAL
+                            force: document.getElementById('ins-force').value,
+                            alzas: numAlzas,
+                            behavior: document.getElementById('ins-behavior').value,
+                            feed: finalFeedText,
+                            protein: selectedProtein,
+                            treatment: treatmentText,
+                            notes: document.getElementById('ins-notes').value,
+                            photo: photoData !== null ? photoData : currentInspection.photoBase64,
+                            frameDetails: currentInspection.frames
+                        };
+                        showSamsungToast("Registro actualizado correctamente");
+                    }
+                } else {
+                    // --- MODO CREACIÓN ---
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const visitData = {
+                        visitId: generateID(),
+                        hiveId: currentInspection.hiveId,
+                        date: todayStr,
+                        force: document.getElementById('ins-force').value,
+                        alzas: numAlzas,
+                        behavior: document.getElementById('ins-behavior').value,
+                        feed: finalFeedText,
+                        protein: selectedProtein,
+                        treatment: treatmentText,
+                        notes: document.getElementById('ins-notes').value,
+                        photo: photoData,
+                        frameDetails: currentInspection.frames
+                    };
 
-                if (treatmentText !== '') {
+                    appData.visits.push(visitData);
+                    appData.hives[hiveIndex].lastVisit = todayStr;
+                    showSamsungToast("Inspección guardada correctamente");
+                }
+
+                if (treatmentText !== '' && !editingVisitId) {
                     const weeksInput = prompt(`Tratamiento: "${treatmentText}"\n¿En cuántas SEMANAS programar alerta?`, "2");
                     if (weeksInput !== null) {
                         const weeks = parseInt(weeksInput, 10);
@@ -1074,13 +1154,17 @@
                     }
                 }
 
-                appData.visits.push(visitData);
-                appData.hives[hiveIndex].lastVisit = todayStr;
                 appData.hives[hiveIndex].alzas = numAlzas;
 
                 saveData();
                 closeModal('inspection-modal');
-                showSamsungToast("Inspección guardada correctamente");
+                
+                // Si el historial estaba abierto, actualizarlo
+                if (!document.getElementById('history-modal').classList.contains('hidden')) {
+                    openHiveHistory(currentInspection.hiveId);
+                }
+                
+                editingVisitId = null;
                 renderDashboard();
                 renderHives();
             };
@@ -1133,7 +1217,10 @@
                             <strong>📅 ${visit.date}</strong> - Fuerza: <strong>${visit.force}</strong> | Alzas: ${visit.alzas || 0}
                             <br><span style="font-size:12px; color:var(--samsung-secondary);">${visit.notes ? visit.notes.substring(0, 40) + '...' : 'Sin notas'}</span>
                         </div>
-                        <button class="btn btn-danger" style="width:auto; padding:8px 12px; margin-top:0; font-size:14px;" onclick="event.stopPropagation(); deleteVisit('${visit.visitId}', '${visit.hiveId}')" title="Borrar registro">🗑️</button>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn btn-info" style="width:auto; padding:8px 12px; margin-top:0; font-size:14px;" onclick="event.stopPropagation(); editInspection('${visit.visitId}')" title="Editar registro">✏️</button>
+                            <button class="btn btn-danger" style="width:auto; padding:8px 12px; margin-top:0; font-size:14px;" onclick="event.stopPropagation(); deleteVisit('${visit.visitId}', '${visit.hiveId}')" title="Borrar registro">🗑️</button>
+                        </div>
                     `;
                     listContainer.appendChild(div);
                 });
@@ -1225,6 +1312,7 @@
             });
         }
 
+        // --- DETALLE DE LA VISITA ---
         function showVisitDetail(visitId) {
             const visit = appData.visits.find(v => v.visitId === visitId);
             if (!visit) return;
@@ -1232,6 +1320,10 @@
             document.getElementById('visit-detail-title').innerText = `Inspección del ${visit.date}`;
             const body = document.getElementById('visit-detail-body');
             
+            // Asignar evento al botón de editar dentro del detalle
+            const btnEdit = document.getElementById('btn-edit-from-detail');
+            btnEdit.onclick = () => editInspection(visit.visitId);
+
             let framesContent = '';
             if (visit.frameDetails && Object.keys(visit.frameDetails).length > 0) {
                 const groups = { 'Cámara de Cría': [], 'Alza 1': [], 'Alza 2': [], 'Alza 3': [] };
@@ -1264,14 +1356,22 @@
                         groups[groupName].forEach(item => {
                             const f = item.f;
                             let detailsHTML = '';
-                            if (f.type) detailsHTML += `<span style="color:var(--samsung-blue); font-weight:bold;">${f.type}</span><br>`;
-                            if (f.broodPresence && f.broodPresence !== 'Sin cría') detailsHTML += `Cría: ${f.broodPresence}<br>`;
-                            if (f.honeyAmount && f.honeyAmount !== 'Nada') detailsHTML += `Miel: ${f.honeyAmount}<br>`;
-                            if (f.pollen && f.pollen !== 'Nada') detailsHTML += `Polen: ${f.pollen}<br>`;
-                            if (f.physical) detailsHTML += `Estado: ${f.physical}`;
+                            
+                            if (f.type) {
+                                detailsHTML += `<span style="color:var(--samsung-blue); font-weight:bold;">${f.type}</span><br>`;
+                            }
+                            if (f.broodPresence && f.broodPresence !== 'Sin cría') {
+                                detailsHTML += `Cría: ${f.broodPresence}<br>`;
+                            }
+                            if (f.honeyAmount && f.honeyAmount !== 'Nada') {
+                                detailsHTML += `Miel: ${f.honeyAmount}<br>`;
+                            }
+                            if (f.pollen && f.pollen !== 'Nada') {
+                                detailsHTML += `Polen: ${f.pollen}<br>`;
+                            }
 
                             framesContent += `
-                                <div class="frame-box inspected" style="font-size:9px; height:80px; padding:2px; line-height:1.1; overflow:hidden;">
+                                <div class="frame-box inspected" style="font-size:9px; min-height:70px; height:auto; padding:4px 2px; line-height:1.15; overflow:hidden;">
                                     <strong>${item.label}</strong><br>${detailsHTML}
                                 </div>`;
                         });
