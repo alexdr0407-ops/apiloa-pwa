@@ -106,7 +106,6 @@
                 <label>Identificador de la Unidad:</label>
                 <input type="text" id="new-hive-id" placeholder="Ej: M-023 o ENJ-01">
                 
-                <!-- CAMBIO 1: Estado Inicial únicamente Activa o Débil -->
                 <label>Estado Inicial:</label>
                 <select id="new-hive-state">
                     <option value="Activa">Activa</option>
@@ -140,7 +139,6 @@
                     <option value="Débil">Débil</option>
                 </select>
 
-                <!-- CAMBIO 2: Selección de alzas actualiza dinámicamente los cuadros de cada alza -->
                 <label>Número de Alzas Presentes/Añadidas (Máx 3):</label>
                 <select id="ins-alzas" onchange="renderInspectionFrames()">
                     <option value="0">0 Alzas</option>
@@ -181,34 +179,73 @@
             </div>
         </div>
 
-        <!-- MODAL DETALLE DE CUADRO -->
+        <!-- MODAL DETALLE DE CUADRO ACTUALIZADO -->
         <div id="frame-modal" class="modal hidden">
             <div class="modal-content">
                 <h3 id="frame-modal-title">Detalle del Cuadro</h3>
-                <label>Estado Físico del Cuadro:</label>
+                
+                <label>Tipo de Cuadro:</label>
+                <select id="frame-type">
+                    <option value="Cuadro de cera estampada">Cuadro de cera estampada</option>
+                    <option value="Cuadro estirado">Cuadro estirado</option>
+                    <option value="Cuadro de cría">Cuadro de cría</option>
+                    <option value="Cuadro de miel">Cuadro de miel</option>
+                    <option value="Cuadro de polen">Cuadro de polen</option>
+                    <option value="Cuadro mixto">Cuadro mixto</option>
+                </select>
+
+                <label>Estado del Cuadro:</label>
                 <select id="frame-physical">
-                    <option value="Bueno">Bueno</option>
-                    <option value="Viejo/Negro">Viejo / Cera Oscura</option>
-                    <option value="Para Renovar">Para Renovar</option>
-                    <option value="Cera Estampada">Cera Estampada</option>
+                    <option value="Buen Estado">Buen Estado</option>
+                    <option value="Mal estado">Mal estado</option>
+                    <option value="Viejo">Viejo</option>
                 </select>
-                
-                <label>Presencia de Cría:</label>
-                <select id="frame-brood">
-                    <option value="Sin Cría">Sin Cría</option>
-                    <option value="Cría Abierta">Cría Abierta (Huevos/Larvas)</option>
-                    <option value="Cría Operculada">Cría Operculada</option>
-                    <option value="Cría Mixta Abundante">Cría Mixta Abundante</option>
+
+                <label>Cría:</label>
+                <select id="frame-brood-presence" onchange="toggleBroodQuality()">
+                    <option value="Sin cría">Sin cría</option>
+                    <option value="Cría abierta">Cría abierta</option>
+                    <option value="Cría operculada">Cría operculada</option>
+                    <option value="Ambas">Ambas</option>
                 </select>
-                
-                <label>Reservas de Miel/Polen:</label>
-                <select id="frame-honey">
-                    <option value="Vacío">Vacío</option>
-                    <option value="Corona de Miel">Corona de Miel</option>
-                    <option value="Miel y Polen">Miel y Polen</option>
-                    <option value="Lleno Miel Operculada">Lleno de Miel Operculada</option>
+
+                <div id="frame-brood-quality-container" class="hidden">
+                    <label>Tipo / Cantidad de Cría:</label>
+                    <select id="frame-brood-quality">
+                        <option value="Escasa">Escasa</option>
+                        <option value="Media">Media</option>
+                        <option value="Abundante">Abundante</option>
+                        <option value="Compacta">Compacta</option>
+                        <option value="Irregular">Irregular</option>
+                    </select>
+                </div>
+
+                <label>Miel:</label>
+                <select id="frame-honey-amount" onchange="toggleHoneyType()">
+                    <option value="Nada">Nada</option>
+                    <option value="Muy poca">Muy poca</option>
+                    <option value="Poca">Poca</option>
+                    <option value="Media">Media</option>
+                    <option value="Mucha">Mucha</option>
+                    <option value="Muy abundante">Muy abundante</option>
                 </select>
-                
+
+                <div id="frame-honey-type-container" class="hidden">
+                    <label>Estado de la Miel:</label>
+                    <select id="frame-honey-type">
+                        <option value="Miel operculada">Miel operculada</option>
+                        <option value="Miel sin opercular o mixta">Miel sin opercular o mixta</option>
+                    </select>
+                </div>
+
+                <label>Polen:</label>
+                <select id="frame-pollen">
+                    <option value="Nada">Nada</option>
+                    <option value="Poco">Poco</option>
+                    <option value="Medio">Medio</option>
+                    <option value="Mucho">Mucho</option>
+                </select>
+
                 <button class="btn btn-primary" onclick="saveFrameDetail()">Guardar Datos del Cuadro</button>
             </div>
         </div>
@@ -218,7 +255,6 @@
             <div class="modal-content" style="max-width: 500px;">
                 <h2 id="history-hive-title" style="color: var(--primary);">Historial de la Colmena</h2>
                 
-                <!-- CAMBIO 3: Opciones personalizables de gráficos -->
                 <div class="card" style="margin-top: 10px;">
                     <h4 style="margin-bottom:8px;">📈 Evolución Gráfica</h4>
                     <label style="font-size:12px; font-weight:bold;">Métrica a Analizar:</label>
@@ -430,14 +466,12 @@
             const today = new Date();
 
             appData.hives.forEach(hive => {
-                // Alerta 1: Reina Vieja
                 const alertKeyOldQueen = `queen_${hive.hiveId}`;
                 if (2026 - hive.queenYear >= 2 && !appData.dismissedAlerts.includes(alertKeyOldQueen)) {
                     addAlertUI(alertsContainer, alertKeyOldQueen, `Reina antigua en <strong>${hive.hiveId}</strong> (Año ${hive.queenYear}).`);
                     activeAlertsCount++;
                 }
 
-                // Alerta 2: Sin Inspeccionar en 30 días
                 const alertKeyNoVisit = `visit_${hive.hiveId}`;
                 if (!appData.dismissedAlerts.includes(alertKeyNoVisit)) {
                     if (hive.lastVisit) {
@@ -468,7 +502,6 @@
                 <button class="dismiss-btn" onclick="dismissAlert('${alertId}')" title="Descartar Alerta">❌</button>
             `;
             container.appendChild(div);
-            
             triggerNotification("Alerta en Colmenar", messageHTML.replace(/<[^>]*>?/gm, ''));
         }
 
@@ -480,7 +513,7 @@
             }
         }
 
-        // --- INSPECCIÓN Y CONTROL DE CUADROS POR ALZA ---
+        // --- INSPECCIÓN Y CONTROL DE CUADROS ---
         function openInspection(hiveIndex) {
             const hive = appData.hives[hiveIndex];
             currentInspection = { hiveId: hive.hiveId, hiveIndex: hiveIndex, frames: {}, photoBase64: null };
@@ -506,7 +539,6 @@
             document.getElementById('inspection-modal').classList.remove('hidden');
         }
 
-        // Renderiza los cuadros de la cámara y de cada alza (hasta 10 cuadros por alza)
         function renderInspectionFrames() {
             const hive = appData.hives[currentInspection.hiveIndex];
             if (!hive) return;
@@ -514,7 +546,7 @@
             const container = document.getElementById('frames-sections-container');
             container.innerHTML = '';
 
-            // 1. Cámara de Cría
+            // Cámara de Cría
             const camaraDiv = document.createElement('div');
             camaraDiv.innerHTML = `<h4 style="margin:10px 0 5px; color:var(--primary);">Cámara de Cría (${hive.frames.length} Cuadros)</h4>`;
             const camaraGrid = document.createElement('div');
@@ -532,7 +564,7 @@
             camaraDiv.appendChild(camaraGrid);
             container.appendChild(camaraDiv);
 
-            // 2. Alzas (Hasta 3 alzas, cada una con 10 cuadros)
+            // Alzas
             for (let a = 1; a <= numAlzas; a++) {
                 const alzaDiv = document.createElement('div');
                 alzaDiv.innerHTML = `<h4 style="margin:15px 0 5px; color:var(--primary);">Alza ${a} (10 Cuadros)</h4>`;
@@ -553,30 +585,71 @@
             }
         }
 
+        // VISIBILIDAD CONDICIONAL DE DESPLEGABLES DE CRÍA Y MIEL
+        function toggleBroodQuality() {
+            const val = document.getElementById('frame-brood-presence').value;
+            const container = document.getElementById('frame-brood-quality-container');
+            if (val !== 'Sin cría') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function toggleHoneyType() {
+            const val = document.getElementById('frame-honey-amount').value;
+            const container = document.getElementById('frame-honey-type-container');
+            if (val !== 'Nada') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
         function openFrameModal(key, displayName) {
             currentFrameKey = key;
             document.getElementById('frame-modal-title').innerText = displayName;
             
-            if (currentInspection.frames[key]) {
-                document.getElementById('frame-physical').value = currentInspection.frames[key].physical;
-                document.getElementById('frame-brood').value = currentInspection.frames[key].brood;
-                document.getElementById('frame-honey').value = currentInspection.frames[key].honey;
+            const existing = currentInspection.frames[key];
+            if (existing) {
+                document.getElementById('frame-type').value = existing.type || 'Cuadro de cera estampada';
+                document.getElementById('frame-physical').value = existing.physical || 'Buen Estado';
+                document.getElementById('frame-brood-presence').value = existing.broodPresence || 'Sin cría';
+                document.getElementById('frame-brood-quality').value = existing.broodQuality || 'Media';
+                document.getElementById('frame-honey-amount').value = existing.honeyAmount || 'Nada';
+                document.getElementById('frame-honey-type').value = existing.honeyType || 'Miel operculada';
+                document.getElementById('frame-pollen').value = existing.pollen || 'Nada';
             } else {
-                document.getElementById('frame-physical').value = 'Bueno';
-                document.getElementById('frame-brood').value = 'Sin Cría';
-                document.getElementById('frame-honey').value = 'Vacío';
+                document.getElementById('frame-type').value = 'Cuadro de cera estampada';
+                document.getElementById('frame-physical').value = 'Buen Estado';
+                document.getElementById('frame-brood-presence').value = 'Sin cría';
+                document.getElementById('frame-brood-quality').value = 'Media';
+                document.getElementById('frame-honey-amount').value = 'Nada';
+                document.getElementById('frame-honey-type').value = 'Miel operculada';
+                document.getElementById('frame-pollen').value = 'Nada';
             }
+
+            toggleBroodQuality();
+            toggleHoneyType();
 
             document.getElementById('frame-modal').classList.remove('hidden');
         }
 
         function saveFrameDetail() {
             if (!currentFrameKey) return;
+            const broodPresence = document.getElementById('frame-brood-presence').value;
+            const honeyAmount = document.getElementById('frame-honey-amount').value;
+
             currentInspection.frames[currentFrameKey] = {
+                type: document.getElementById('frame-type').value,
                 physical: document.getElementById('frame-physical').value,
-                brood: document.getElementById('frame-brood').value,
-                honey: document.getElementById('frame-honey').value
+                broodPresence: broodPresence,
+                broodQuality: broodPresence !== 'Sin cría' ? document.getElementById('frame-brood-quality').value : null,
+                honeyAmount: honeyAmount,
+                honeyType: honeyAmount !== 'Nada' ? document.getElementById('frame-honey-type').value : null,
+                pollen: document.getElementById('frame-pollen').value
             };
+
             const el = document.getElementById(`ui-frame-${currentFrameKey}`);
             if (el) el.classList.add('inspected');
             closeModal('frame-modal');
@@ -647,8 +720,6 @@
         function openHiveHistory(hiveId) {
             document.getElementById('history-hive-title').innerText = `Historial: ${hiveId}`;
             const rawVisits = appData.visits.filter(v => v.hiveId === hiveId);
-            
-            // Ordenar de más antiguo a más reciente para el gráfico
             currentHistoryVisits = rawVisits.sort((a, b) => new Date(a.date) - new Date(b.date));
             
             const listContainer = document.getElementById('history-list');
@@ -657,7 +728,6 @@
             if (currentHistoryVisits.length === 0) {
                 listContainer.innerHTML = '<p>No hay inspecciones registradas para esta unidad.</p>';
             } else {
-                // Mostrar en la lista del más reciente al más antiguo
                 [...currentHistoryVisits].reverse().forEach(visit => {
                     const div = document.createElement('div');
                     div.className = 'history-entry';
@@ -674,7 +744,6 @@
             document.getElementById('history-modal').classList.remove('hidden');
         }
 
-        // Genera el gráfico según la opción elegida por el usuario
         function updateHistoryChart() {
             if (currentHistoryVisits.length === 0) return;
             
@@ -703,14 +772,20 @@
                     labelText = 'Cuadros con Cría';
                     dataPoints = currentHistoryVisits.map(v => {
                         if (!v.frameDetails) return 0;
-                        return Object.values(v.frameDetails).filter(f => f.brood && f.brood !== 'Sin Cría').length;
+                        return Object.values(v.frameDetails).filter(f => 
+                            (f.broodPresence && f.broodPresence !== 'Sin cría') || 
+                            (f.brood && f.brood !== 'Sin Cría')
+                        ).length;
                     });
                     break;
                 case 'miel':
                     labelText = 'Cuadros con Miel / Reservas';
                     dataPoints = currentHistoryVisits.map(v => {
                         if (!v.frameDetails) return 0;
-                        return Object.values(v.frameDetails).filter(f => f.honey && f.honey !== 'Vacío').length;
+                        return Object.values(v.frameDetails).filter(f => 
+                            (f.honeyAmount && f.honeyAmount !== 'Nada') || 
+                            (f.honey && f.honey !== 'Vacío')
+                        ).length;
                     });
                     break;
                 case 'inspeccionados':
@@ -724,7 +799,12 @@
                     labelText = 'Cuadros Para Renovar / Viejos';
                     dataPoints = currentHistoryVisits.map(v => {
                         if (!v.frameDetails) return 0;
-                        return Object.values(v.frameDetails).filter(f => f.physical === 'Para Renovar' || f.physical === 'Viejo/Negro').length;
+                        return Object.values(v.frameDetails).filter(f => 
+                            f.physical === 'Mal estado' || 
+                            f.physical === 'Viejo' || 
+                            f.physical === 'Para Renovar' || 
+                            f.physical === 'Viejo/Negro'
+                        ).length;
                     });
                     break;
             }
@@ -761,7 +841,7 @@
             });
         }
 
-        // Muestra el detalle de una visita específica clasificado por Cámara y Alzas
+        // Muestra el detalle completo de la inspección
         function showVisitDetail(visitId) {
             const visit = appData.visits.find(v => v.visitId === visitId);
             if (!visit) return;
@@ -799,9 +879,29 @@
                         framesContent += `<h5 style="margin-top:10px; margin-bottom:5px; color:var(--primary);">${groupName}</h5>`;
                         framesContent += '<div class="frames-grid">';
                         groups[groupName].forEach(item => {
+                            const f = item.f;
+                            let detailsHTML = '';
+                            
+                            if (f.type) detailsHTML += `<span style="color:#d4a373; font-weight:bold;">${f.type}</span><br>`;
+                            if (f.broodPresence && f.broodPresence !== 'Sin cría') {
+                                detailsHTML += `Cría: ${f.broodPresence} (${f.broodQuality || ''})<br>`;
+                            } else if (f.brood && f.brood !== 'Sin Cría') {
+                                detailsHTML += `Cría: ${f.brood}<br>`;
+                            }
+                            if (f.honeyAmount && f.honeyAmount !== 'Nada') {
+                                detailsHTML += `Miel: ${f.honeyAmount}<br>`;
+                            } else if (f.honey && f.honey !== 'Vacío') {
+                                detailsHTML += `Miel: ${f.honey}<br>`;
+                            }
+                            if (f.pollen && f.pollen !== 'Nada') {
+                                detailsHTML += `Polen: ${f.pollen}<br>`;
+                            }
+                            if (f.physical) detailsHTML += `Estado: ${f.physical}`;
+
                             framesContent += `
-                                <div class="frame-box inspected" style="font-size:9px; height:65px;">
-                                    <strong>${item.label}</strong><br>${item.f.brood}<br>${item.f.honey}
+                                <div class="frame-box inspected" style="font-size:8px; height:85px; padding:2px; line-height:1.1; overflow:hidden;">
+                                    <strong>${item.label}</strong><br>
+                                    ${detailsHTML}
                                 </div>`;
                         });
                         framesContent += '</div>';
