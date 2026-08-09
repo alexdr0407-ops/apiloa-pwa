@@ -1,0 +1,21 @@
+{
+    "name": "ApiLab Gestión Apícola",
+    "short_name": "ApiLab",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#fef3c7",
+    "theme_color": "#d97706",
+    "description": "Aplicación de gestión y control de colmenas y enjambres offline.",
+    "icons": [
+        {
+            "src": "https://via.placeholder.com/192.png?text=🐝",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "https://via.placeholder.com/512.png?text=🐝",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
