@@ -55,6 +55,10 @@
             transition: all 0.2s ease;
             text-align: center;
             box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
         .btn:active { transform: scale(0.98); }
         .btn-primary { background: var(--samsung-blue); color: white; }
@@ -280,7 +284,7 @@
         /* Tags & Previews */
         .queen-color { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2); margin-left: 5px; vertical-align: middle; }
         .photo-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 16px; margin-top: 10px; }
-        .history-entry { border-bottom: 1px solid #F0F0F0; padding: 14px 0; cursor: pointer; }
+        .history-entry { border-bottom: 1px solid #F0F0F0; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .history-entry:last-child { border-bottom: none; }
     </style>
 </head>
@@ -339,7 +343,7 @@
             <div id="hives-list"></div>
         </div>
 
-        <!-- VISTA: NUEVA UNIDAD (MODIFICADA SEGÚN REQUERIMIENTO) -->
+        <!-- VISTA: NUEVA UNIDAD -->
         <div id="nueva-unidad-view" class="view hidden">
             <div class="header-container">
                 <div class="header-title">Añadir Unidad</div>
@@ -553,7 +557,7 @@
     </div>
 
     <script>
-        // --- ESTADO Y BASE DE DATOS LOCAL ---
+        // --- ESTADO Y BASE DE DATOS LOCAL SEGURA ---
         let appData = {
             hives: [],
             visits: [],
@@ -635,22 +639,27 @@
             }
         }
 
-        function triggerNotification(title, body) {
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(title, { body: body, icon: '🐝' });
-            }
-        }
-
-        // --- PERSISTENCIA ---
+        // --- PERSISTENCIA Y CARGA ROBUSTA ---
         function saveData() {
             localStorage.setItem('colmenares_data', JSON.stringify(appData));
         }
 
         function loadData() {
-            const data = localStorage.getItem('colmenares_data');
-            if (data) appData = JSON.parse(data);
-            if (!appData.dismissedAlerts) appData.dismissedAlerts = [];
-            if (!appData.reminders) appData.reminders = [];
+            try {
+                const data = localStorage.getItem('colmenares_data');
+                if (data) {
+                    appData = JSON.parse(data);
+                }
+            } catch (e) {
+                console.error("Error al cargar localStorage:", e);
+                appData = {};
+            }
+            
+            // Garantizar estructura mínima sin undefined
+            if (!Array.isArray(appData.hives)) appData.hives = [];
+            if (!Array.isArray(appData.visits)) appData.visits = [];
+            if (!Array.isArray(appData.dismissedAlerts)) appData.dismissedAlerts = [];
+            if (!Array.isArray(appData.reminders)) appData.reminders = [];
         }
 
         // --- NAVEGACIÓN ---
@@ -668,45 +677,108 @@
             document.getElementById(id).classList.add('hidden');
         }
 
-        // --- CREACIÓN DE NUEVA UNIDAD (MODIFICADO) ---
+        // --- CREACIÓN DE NUEVA UNIDAD ---
         function createHive() {
-            const id = document.getElementById('new-hive-id').value.trim();
-            const type = document.getElementById('new-hive-type').value;
-            const queenYear = parseInt(document.getElementById('new-hive-queen').value) || 2026;
-            
-            // Asignación automática de cuadros y estado inicial predeterminado
-            const numFrames = (type === 'Enjambre') ? 5 : 10;
-            const state = "Activa";
+            try {
+                const idInput = document.getElementById('new-hive-id');
+                const typeInput = document.getElementById('new-hive-type');
+                const queenInput = document.getElementById('new-hive-queen');
 
-            if (!id) return showSamsungToast("Introduce un identificador válido");
+                const id = idInput ? idInput.value.trim() : '';
+                const type = typeInput ? typeInput.value : 'Colmena';
+                const queenYear = queenInput ? (parseInt(queenInput.value) || 2026) : 2026;
+                
+                if (!id) {
+                    showSamsungToast("Escribe un identificador válido");
+                    return;
+                }
 
-            let frames = [];
-            for (let i = 0; i < numFrames; i++) {
-                frames.push({ id: `CWD-${generateID()}`, position: i + 1 });
+                // Asignación automática de cuadros y estado inicial
+                const numFrames = (type === 'Enjambre') ? 5 : 10;
+                const state = "Activa";
+
+                let frames = [];
+                for (let i = 0; i < numFrames; i++) {
+                    frames.push({ id: `CWD-${generateID()}`, position: i + 1 });
+                }
+
+                const newHive = {
+                    hiveId: id,
+                    type: type,
+                    state: state,
+                    queenYear: queenYear,
+                    alzas: 0,
+                    frames: frames,
+                    lastVisit: null
+                };
+
+                // Asegurar inicialización previa a inserción
+                if (!Array.isArray(appData.hives)) appData.hives = [];
+
+                appData.hives.push(newHive);
+                saveData();
+                showSamsungToast(`${type} "${id}" registrada con éxito`);
+                
+                if (idInput) idInput.value = '';
+                showView('unidades-view', 'nav-unid');
+                renderHives();
+                renderDashboard();
+            } catch (err) {
+                console.error("Error al crear unidad:", err);
+                showSamsungToast("Error al guardar registro");
             }
+        }
 
-            const newHive = {
-                hiveId: id,
-                type: type,
-                state: state,
-                queenYear: queenYear,
-                alzas: 0,
-                frames: frames,
-                lastVisit: null
-            };
+        // --- BORRAR COLMENA / ENJAMBRE ---
+        function deleteHive(hiveId) {
+            if (confirm(`¿Estás seguro de que deseas borrar la unidad "${hiveId}" y todo su historial de registros?`)) {
+                appData.hives = appData.hives.filter(h => h.hiveId !== hiveId);
+                appData.visits = appData.visits.filter(v => v.hiveId !== hiveId);
+                if (appData.reminders) {
+                    appData.reminders = appData.reminders.filter(r => r.hiveId !== hiveId);
+                }
+                saveData();
+                renderHives();
+                renderDashboard();
+                showSamsungToast(`Unidad ${hiveId} eliminada`);
+            }
+        }
 
-            appData.hives.push(newHive);
-            saveData();
-            showSamsungToast(`${type} registrada con éxito`);
-            document.getElementById('new-hive-id').value = '';
-            showView('unidades-view', 'nav-unid');
-            renderHives();
-            renderDashboard();
+        // --- BORRAR REGISTRO DE INSPECCIÓN INDIVIDUAL ---
+        function deleteVisit(visitId, hiveId) {
+            if (confirm("¿Estás seguro de que deseas borrar este registro de inspección?")) {
+                appData.visits = appData.visits.filter(v => v.visitId !== visitId);
+                
+                // Recalcular la fecha de última visita para la colmena
+                const remainingVisits = appData.visits.filter(v => v.hiveId === hiveId);
+                const hiveObj = appData.hives.find(h => h.hiveId === hiveId);
+                if (hiveObj) {
+                    if (remainingVisits.length > 0) {
+                        const sorted = [...remainingVisits].sort((a,b) => new Date(b.date) - new Date(a.date));
+                        hiveObj.lastVisit = sorted[0].date;
+                    } else {
+                        hiveObj.lastVisit = null;
+                    }
+                }
+                
+                saveData();
+                openHiveHistory(hiveId);
+                renderHives();
+                renderDashboard();
+                showSamsungToast("Registro eliminado");
+            }
         }
 
         function renderHives() {
             const container = document.getElementById('hives-list');
+            if (!container) return;
             container.innerHTML = '';
+            
+            if (!appData.hives || appData.hives.length === 0) {
+                container.innerHTML = '<div class="card"><p style="text-align:center; color:var(--samsung-secondary);">No hay colmenas ni enjambres registrados.</p></div>';
+                return;
+            }
+
             appData.hives.forEach((hive, index) => {
                 const queenColor = getQueenColor(hive.queenYear);
                 const div = document.createElement('div');
@@ -720,7 +792,10 @@
                                 Reina: ${hive.queenYear} <span class="queen-color" style="background:${queenColor}"></span>
                             </p>
                         </div>
-                        <button class="btn btn-primary" style="width: auto; padding: 10px 18px; margin-top:0;" onclick="openInspection(${index})">Inspeccionar</button>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <button class="btn btn-primary" style="width: auto; padding: 10px 14px; margin-top:0;" onclick="openInspection(${index})">Inspeccionar</button>
+                            <button class="btn btn-danger" style="width: auto; padding: 10px 12px; margin-top:0; font-size:16px;" onclick="deleteHive('${hive.hiveId}')" title="Borrar unidad">🗑️</button>
+                        </div>
                     </div>
                 `;
                 container.appendChild(div);
@@ -730,10 +805,13 @@
         // --- DASHBOARD & ALERTAS ---
         function renderDashboard() {
             const alertsContainer = document.getElementById('alerts-container');
+            if (!alertsContainer) return;
             alertsContainer.innerHTML = '';
             let activeAlertsCount = 0;
 
-            document.getElementById('total-hives').innerText = appData.hives.length;
+            const totalHivesEl = document.getElementById('total-hives');
+            if (totalHivesEl) totalHivesEl.innerText = appData.hives.length;
+            
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
 
@@ -772,7 +850,8 @@
             if (activeAlertsCount === 0) {
                 alertsContainer.innerHTML = '<p style="color:var(--samsung-success); font-size:14px;">✅ No hay alertas pendientes.</p>';
             }
-            document.getElementById('total-alerts').innerText = activeAlertsCount;
+            const totalAlertsEl = document.getElementById('total-alerts');
+            if (totalAlertsEl) totalAlertsEl.innerText = activeAlertsCount;
         }
 
         function addAlertUI(container, alertId, messageHTML) {
@@ -1049,10 +1128,12 @@
                 [...currentHistoryVisits].reverse().forEach(visit => {
                     const div = document.createElement('div');
                     div.className = 'history-entry';
-                    div.onclick = () => showVisitDetail(visit.visitId);
                     div.innerHTML = `
-                        <strong>📅 ${visit.date}</strong> - Fuerza: <strong>${visit.force}</strong> | Alzas: ${visit.alzas || 0}
-                        <br><span style="font-size:12px; color:var(--samsung-secondary);">${visit.notes ? visit.notes.substring(0, 40) + '...' : 'Sin notas'}</span>
+                        <div onclick="showVisitDetail('${visit.visitId}')" style="flex-grow:1; cursor:pointer;">
+                            <strong>📅 ${visit.date}</strong> - Fuerza: <strong>${visit.force}</strong> | Alzas: ${visit.alzas || 0}
+                            <br><span style="font-size:12px; color:var(--samsung-secondary);">${visit.notes ? visit.notes.substring(0, 40) + '...' : 'Sin notas'}</span>
+                        </div>
+                        <button class="btn btn-danger" style="width:auto; padding:8px 12px; margin-top:0; font-size:14px;" onclick="event.stopPropagation(); deleteVisit('${visit.visitId}', '${visit.hiveId}')" title="Borrar registro">🗑️</button>
                     `;
                     listContainer.appendChild(div);
                 });
