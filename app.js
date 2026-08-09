@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let hives = JSON.parse(localStorage.getItem('apilab_hives')) || [];
     let currentHiveIndex = null;
-    let currentInspectionIndex = 0; // Índice de la visita seleccionada
+    let currentInspectionIndex = 0;
     let recognition = null;
     let isListening = false;
     let statsChart = null;
@@ -73,7 +73,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
             });
 
-            const lastInspection = hive.inspections.length > 0 ? hive.inspections[hive.inspections.length - 1].date : 'Sin visitas';
+            const lastInspection = hive.inspections && hive.inspections.length > 0 
+                ? hive.inspections[hive.inspections.length - 1].date 
+                : 'Sin visitas';
 
             div.innerHTML = `
                 <h3>${hive.name} (${hive.type})</h3>
@@ -107,11 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const type = document.getElementById('hive-type').value;
         const baseFramesCount = type === 'Colmena' ? 10 : 5;
 
-        // Estructura inicial de la primera inspección automática al crear
         const initialInspection = {
             date: new Date().toLocaleString(),
             baseInspection: generateInitialFrames(baseFramesCount),
-            supers: [] // Guardará instantánea de las alzas en esa visita
+            supers: []
         };
 
         const newHive = {
@@ -119,22 +120,21 @@ document.addEventListener('DOMContentLoaded', () => {
             type,
             baseFrames: baseFramesCount,
             date: new Date().toLocaleDateString(),
-            supers: [], // Alzas estructurales actuales de la colmena
-            inspections: [initialInspection] // Historial de visitas
+            supers: [],
+            inspections: [initialInspection]
         };
 
         hives.push(newHive);
         hiveForm.reset();
         saveAndRender();
         
-        // Redirigir automáticamente a la pestaña "Mis Unidades" tras crear
+        // Cambiar automáticamente a la pestaña de "Mis Unidades" para ver el resultado guardado
         document.querySelector('[data-target="view-hives"]').click();
     });
 
-    // Abrir Modal de Historial e Inspección
     window.openInspection = (index) => {
         currentHiveIndex = index;
-        currentInspectionIndex = hives[index].inspections.length - 1; // Seleccionar la más reciente por defecto
+        currentInspectionIndex = hives[index].inspections.length - 1;
         const hive = hives[index];
         modalTitle.textContent = `Inspecciones: ${hive.name}`;
         updateInspectionSelect();
@@ -159,17 +159,13 @@ document.addEventListener('DOMContentLoaded', () => {
         renderInspectionContent();
     };
 
-    // Crear un Nuevo Registro de Visita (Nueva Inspección)
     newInspectionBtn.onclick = () => {
         const hive = hives[currentHiveIndex];
-        // Clonar la última inspección o generar una limpia
         const lastInsp = hive.inspections[hive.inspections.length - 1];
         
-        // Copiamos la estructura actual de la colmena para la nueva visita
         let newBase = JSON.parse(JSON.stringify(lastInsp.baseInspection));
         let newSupersSnap = JSON.parse(JSON.stringify(lastInsp.supers));
 
-        // Si se han añadido alzas nuevas a la estructura global, asegurarlas en la visita
         if (hive.supers.length !== newSupersSnap.length) {
             newSupersSnap = hive.supers.map(sup => ({
                 frames: generateInitialFrames(sup.frames.length)
@@ -196,7 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!inspection) return;
 
-        // Renderizar Cámara Base de esta visita
         let baseDiv = document.createElement('div');
         baseDiv.innerHTML = `<h3 style="color:var(--primary-dark); margin-bottom:0.5rem;">Cámara Base (${hive.baseFrames} cuadros)</h3>`;
         inspection.baseInspection.forEach((frame, fIdx) => {
@@ -204,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         inspectionFramesContainer.appendChild(baseDiv);
 
-        // Renderizar Alzas de esta visita
         inspection.supers.forEach((sup, sIdx) => {
             let supDiv = document.createElement('div');
             supDiv.style.marginTop = '1.5rem';
@@ -245,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderInspectionContent();
     };
 
-    // Actualizar Gráfico Chart.js para la inspección actual
     function updateChart(inspection) {
         let counts = { estirado: 0, criaReciente: 0, criaOperculada: 0, miel: 0, polen: 0 };
 
@@ -293,11 +286,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Gestión estructural de Alzas
     window.addSuper = (index) => {
         if (hives[index].supers.length < 3) {
             hives[index].supers.push({ frames: generateInitialFrames(10) });
-            // Añadir también el alza a todas las inspecciones históricas para mantener consistencia
             hives[index].inspections.forEach(insp => {
                 insp.supers.push({ frames: generateInitialFrames(10) });
             });
@@ -324,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- EXPORTAR A CSV ---
     exportBtn.onclick = () => {
         if (hives.length === 0) {
             alert('No hay datos para exportar.');
@@ -335,7 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         hives.forEach(hive => {
             hive.inspections.forEach(insp => {
-                // Base
                 insp.baseInspection.forEach(f => {
                     let row = [
                         `"${hive.name}"`, hive.type, hive.date, `"${insp.date}"`, "Base", f.number,
@@ -343,7 +332,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     ].join(",");
                     csvContent += row + "\r\n";
                 });
-                // Alzas
                 insp.supers.forEach((sup, sIdx) => {
                     sup.frames.forEach(f => {
                         let row = [
@@ -365,7 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(link);
     };
 
-    // --- WEB SPEECH API ---
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         recognition = new SpeechRecognition();
@@ -446,5 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    saveAndRender();
+    // Inicializar la interfaz y renderizar los datos locales al arrancar
+    renderHives();
+    updateDashboardStats();
 });
