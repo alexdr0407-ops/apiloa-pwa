@@ -2,119 +2,451 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ApiLab PWA - Gestión Apícola Avanzada</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#d97706">
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestión de Colmenares Pro</title>
+    <style>
+        :root {
+            --primary: #d4a373; --secondary: #faedcd; --dark: #333; --danger: #e63946;
+            --success: #2a9d8f; --bg: #fefae0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--dark); padding-bottom: 70px; }
+        
+        /* Utilidades */
+        .hidden { display: none !important; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        
+        /* Navegación */
+        nav { position: fixed; bottom: 0; width: 100%; background: var(--primary); display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
+        nav div { color: white; font-weight: bold; cursor: pointer; padding: 10px; text-align: center; font-size: 14px; }
+        
+        /* Vistas */
+        .view { padding: 20px; }
+        .header { text-align: center; margin-bottom: 20px; font-size: 24px; color: var(--primary); font-weight: bold; }
+        
+        /* Alertas */
+        .alert-item { border-left: 5px solid var(--danger); background: #ffe6e6; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        
+        /* Cuadros Grid */
+        .frames-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 10px; }
+        .frame-box { background: var(--secondary); border: 2px solid var(--primary); border-radius: 5px; height: 80px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; flex-direction: column; font-size: 12px;}
+        .frame-box.inspected { background: var(--success); color: white; border-color: #1e7168; }
+        
+        /* Modales */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; overflow-y: auto; padding: 20px; }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+        
+        /* Tags Reina */
+        .queen-color { display: inline-block; width: 15px; height: 15px; border-radius: 50%; border: 1px solid #000; margin-left: 5px; vertical-align: middle; }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>🐝 ApiLab PWA</h1>
-        <p>Control Inteligente del Colmenar</p>
-    </header>
 
-    <!-- Barra de Navegación por Subpáginas/Vistas -->
-    <nav class="app-nav">
-        <button class="nav-btn active" data-target="view-dashboard">📊 Dashboard</button>
-        <button class="nav-btn" data-target="view-hives">🐝 Mis Unidades</button>
-        <button class="nav-btn" data-target="view-create">➕ Nueva Unidad</button>
-    </nav>
-
-    <main>
-        <!-- VISTA 1: DASHBOARD PRINCIPAL -->
-        <section id="view-dashboard" class="app-view active-view">
-            <div class="card summary-card">
-                <h2>Resumen del Colmenar</h2>
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <span id="total-hives-count" class="stat-number">0</span>
-                        <span class="stat-label">Total Unidades</span>
-                    </div>
-                    <div class="stat-box">
-                        <span id="total-supers-count" class="stat-number">0</span>
-                        <span class="stat-label">Alzas Activas</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card" style="margin-top: 1.5rem;">
-                <h2>Acciones Rápidas</h2>
-                <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
-                    <button id="export-btn" class="btn-secondary" style="flex:1;">📥 Exportar Datos a CSV</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- VISTA 2: LISTADO DE UNIDADES -->
-        <section id="view-hives" class="app-view">
-            <div class="card">
-                <h2>Unidades Registradas</h2>
-                <div id="hives-container">
-                    <p class="empty-msg">No hay unidades registradas todavía.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- VISTA 3: CREAR UNIDAD -->
-        <section id="view-create" class="app-view">
-            <div class="card">
-                <h2>Registrar Nueva Unidad</h2>
-                <form id="hive-form">
-                    <div class="form-group">
-                        <label for="hive-name">Nombre / Identificador:</label>
-                        <input type="text" id="hive-name" required placeholder="Ej. Colmena 01 / Enjambre Norte">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="hive-type">Tipo de Unidad:</label>
-                        <select id="hive-type">
-                            <option value="Colmena">Colmena (Base: 10 cuadros)</option>
-                            <option value="Enjambre">Enjambre (Base: 5 cuadros)</option>
-                        </select>
-                    </div>
-
-                    <button type="submit">Guardar y Crear</button>
-                </form>
-            </div>
-        </section>
-    </main>
-
-    <!-- Modal de Inspección e Historial -->
-    <div id="inspection-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close-btn" id="close-modal">&times;</span>
-            <h2 id="modal-title">Gestión de Inspecciones</h2>
-            
-            <div class="actions-row" style="margin-bottom: 1rem;">
-                <button id="new-inspection-btn" class="btn-secondary">➕ Nueva Inspección (Visita Hoy)</button>
-            </div>
-
-            <!-- Selector de Historial de Inspecciones -->
-            <div class="form-group" style="background:#f3f4f6; padding:0.8rem; border-radius:8px;">
-                <label for="inspection-select">Historial de Visitas:</label>
-                <select id="inspection-select"></select>
-            </div>
-
-            <div class="speech-control">
-                <button id="speech-btn" class="btn-voice">🎤 Activar Control por Voz</button>
-                <p id="speech-status" class="speech-status">Micrófono inactivo</p>
-                <small class="speech-hint">Di: <em>"Cuadro 1 miel"</em>, <em>"Cuadro 2 cría reciente"</em>, etc.</small>
-            </div>
-
-            <!-- Gráfico de Estadísticas de la Inspección Seleccionada -->
-            <div class="chart-container" style="position: relative; height:180px; width:100%; margin-top: 1rem;">
-                <canvas id="hive-stats-chart"></canvas>
-            </div>
-
-            <div id="inspection-frames-container" style="margin-top: 1.5rem;">
-                <!-- Cuadros detallados -->
-            </div>
+    <!-- VISTA: LOGIN -->
+    <div id="login-view" class="view">
+        <div class="header">Gestión de Colmenares Pro</div>
+        <div class="card">
+            <h3>Iniciar Sesión</h3>
+            <input type="text" id="username" placeholder="Usuario" autocapitalize="none">
+            <input type="password" id="password" placeholder="Contraseña">
+            <button class="btn btn-primary" onclick="login()">Entrar</button>
+            <p id="login-error" style="color: red; margin-top: 10px;" class="hidden">Credenciales incorrectas.</p>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- APP PRINCIPAL (Oculta hasta login) -->
+    <div id="main-app" class="hidden">
+        
+        <!-- VISTA: DASHBOARD -->
+        <div id="dashboard-view" class="view">
+            <div class="header">Panel de Control</div>
+            
+            <div class="card">
+                <h3>⚠️ Alertas del Colmenar</h3>
+                <div id="alerts-container">
+                    <!-- Las alertas se generan por JS -->
+                </div>
+            </div>
+
+            <div class="card" style="display: flex; justify-content: space-between; text-align: center;">
+                <div><h2 id="total-hives">0</h2><p>Colmenas</p></div>
+                <div><h2 id="total-alerts">0</h2><p>Avisos</p></div>
+            </div>
+            <button class="btn btn-primary" onclick="logout()">Cerrar Sesión</button>
+        </div>
+
+        <!-- VISTA: MIS UNIDADES -->
+        <div id="unidades-view" class="view hidden">
+            <div class="header">Mis Colmenas</div>
+            <div id="hives-list"></div>
+        </div>
+
+        <!-- VISTA: NUEVA UNIDAD -->
+        <div id="nueva-unidad-view" class="view hidden">
+            <div class="header">Añadir Colmena</div>
+            <div class="card">
+                <label>Identificador de Colmena:</label>
+                <input type="text" id="new-hive-id" placeholder="Ej: M-023">
+                <label>Estado Inicial:</label>
+                <select id="new-hive-state">
+                    <option value="Activa">Activa</option>
+                    <option value="Núcleo">Núcleo</option>
+                    <option value="Débil">Débil</option>
+                </select>
+                <label>Año de la Reina:</label>
+                <input type="number" id="new-hive-queen" placeholder="Ej: 2026" value="2026">
+                <label>Número de Cuadros:</label>
+                <input type="number" id="new-hive-frames" value="10">
+                <button class="btn btn-primary" onclick="createHive()">Crear Colmena</button>
+            </div>
+        </div>
+
+        <!-- MODAL DE INSPECCIÓN (VISITA) -->
+        <div id="inspection-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="ins-hive-title" style="margin-bottom: 15px; color: var(--primary);">Inspección</h2>
+                
+                <div class="card" style="background: var(--secondary)">
+                    <strong>Info Visita Anterior:</strong> <span id="ins-prev-info">Sin datos previos.</span>
+                </div>
+
+                <h3>1. Valoración General</h3>
+                <label>Fuerza:</label>
+                <select id="ins-force"><option>Fuerte</option><option>Media</option><option>Débil</option></select>
+                <label>Comportamiento:</label>
+                <select id="ins-behavior"><option>Tranquila</option><option>Nerviosa</option><option>Agresiva</option></select>
+                
+                <h3 style="margin-top: 15px;">2. Cuadros (Toca para detalle)</h3>
+                <div class="frames-grid" id="ins-frames-grid"></div>
+                <p style="font-size: 12px; color: #666; margin-top: 5px;">*IDs generados para trazabilidad (ej. C001)</p>
+
+                <h3 style="margin-top: 15px;">3. Intervenciones</h3>
+                <label>Alimentación:</label>
+                <input type="text" id="ins-feed" placeholder="Ej: 2 Litros Jarabe 2:1">
+                <label>Tratamiento Sanitario:</label>
+                <input type="text" id="ins-treatment" placeholder="Ej: Apivar (Inicio)">
+                
+                <h3 style="margin-top: 15px;">4. Multimedia y Notas</h3>
+                <button class="btn" style="background: #e9c46a;" onclick="startDictation()">🎤 Dictar Observación</button>
+                <textarea id="ins-notes" rows="3" placeholder="Observaciones escritas o dictadas..."></textarea>
+                
+                <label>Fotografía de la visita:</label>
+                <input type="file" accept="image/*" capture="environment">
+
+                <button class="btn btn-success" onclick="finishInspection()">Guardar Visita</button>
+                <button class="btn btn-danger" onclick="closeModal('inspection-modal')">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- MODAL DETALLE DE CUADRO -->
+        <div id="frame-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 id="frame-modal-title">Detalle del Cuadro</h3>
+                <label>Estado Físico:</label>
+                <select id="frame-physical"><option>Bueno</option><option>Viejo/Negro</option><option>Para Renovar</option></select>
+                <label>Cría:</label>
+                <select id="frame-brood"><option>Nada</option><option>Abierta</option><option>Operculada</option><option>Mixta (Abundante)</option></select>
+                <label>Miel:</label>
+                <select id="frame-honey"><option>Nada</option><option>Corona</option><option>Medio</option><option>Lleno</option></select>
+                
+                <button class="btn btn-primary" onclick="saveFrameDetail()">Guardar Cuadro</button>
+            </div>
+        </div>
+
+        <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+        <nav>
+            <div onclick="showView('dashboard-view')">📊<br>Panel</div>
+            <div onclick="showView('unidades-view'); renderHives();">🐝<br>Colmenas</div>
+            <div onclick="showView('nueva-unidad-view')">➕<br>Nueva</div>
+        </nav>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS LOCAL (ESTADO) ---
+        let appData = {
+            hives: [],
+            visits: []
+        };
+        let currentInspection = { hiveId: null, frames: {} };
+        let currentFrameIndex = null; // Para el modal del cuadro
+
+        // Función para calcular color de reina internacional según año
+        function getQueenColor(year) {
+            const lastDigit = year.toString().slice(-1);
+            if (['1', '6'].includes(lastDigit)) return '#FFFFFF'; // Blanco
+            if (['2', '7'].includes(lastDigit)) return '#FFD700'; // Amarillo
+            if (['3', '8'].includes(lastDigit)) return '#FF0000'; // Rojo
+            if (['4', '9'].includes(lastDigit)) return '#008000'; // Verde
+            if (['5', '0'].includes(lastDigit)) return '#0000FF'; // Azul
+            return '#ccc';
+        }
+
+        // Generador de IDs únicos para trazabilidad
+        function generateID() {
+            return Math.random().toString(36).substr(2, 9).toUpperCase();
+        }
+
+        // --- SISTEMA DE LOGIN ---
+        function checkSession() {
+            if (localStorage.getItem('colmenares_session') === 'active') {
+                document.getElementById('login-view').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                loadData();
+                renderDashboard();
+            }
+        }
+
+        function login() {
+            const user = document.getElementById('username').value.toLowerCase();
+            const pass = document.getElementById('password').value;
+            
+            if (user === 'bienve' && pass === '1234') {
+                localStorage.setItem('colmenares_session', 'active');
+                document.getElementById('login-error').classList.add('hidden');
+                checkSession();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('colmenares_session');
+            location.reload();
+        }
+
+        // --- GESTIÓN DE DATOS ---
+        function saveData() {
+            localStorage.setItem('colmenares_data', JSON.stringify(appData));
+        }
+
+        function loadData() {
+            const data = localStorage.getItem('colmenares_data');
+            if (data) appData = JSON.parse(data);
+        }
+
+        // --- NAVEGACIÓN ---
+        function showView(viewId) {
+            document.querySelectorAll('#main-app .view').forEach(v => v.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        // --- LÓGICA DE NEGOCIO ---
+        function createHive() {
+            const id = document.getElementById('new-hive-id').value;
+            const state = document.getElementById('new-hive-state').value;
+            const queenYear = parseInt(document.getElementById('new-hive-queen').value) || new Date().getFullYear();
+            const numFrames = parseInt(document.getElementById('new-hive-frames').value) || 10;
+
+            if (!id) return alert("Introduce un identificador.");
+
+            // Trazabilidad: Creamos cuadros con ID permanente único (Matrícula)
+            let frames = [];
+            for (let i = 0; i < numFrames; i++) {
+                frames.push({ id: `F-${generateID()}`, position: i + 1 });
+            }
+
+            const newHive = {
+                hiveId: id,
+                state: state,
+                queenYear: queenYear,
+                frames: frames,
+                lastVisit: null
+            };
+
+            appData.hives.push(newHive);
+            saveData();
+            alert("Colmena creada correctamente.");
+            document.getElementById('new-hive-id').value = '';
+            showView('unidades-view');
+            renderHives();
+            renderDashboard();
+        }
+
+        function renderHives() {
+            const container = document.getElementById('hives-list');
+            container.innerHTML = '';
+            appData.hives.forEach((hive, index) => {
+                const queenColor = getQueenColor(hive.queenYear);
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h3 style="margin-bottom:5px;">${hive.hiveId}</h3>
+                            <p style="font-size:14px; color:#666;">
+                                Estado: <strong>${hive.state}</strong> | 
+                                Reina: ${hive.queenYear} <span class="queen-color" style="background:${queenColor}"></span>
+                            </p>
+                        </div>
+                        <button class="btn btn-primary" style="width: auto; padding: 10px 20px; margin-top:0;" onclick="openInspection(${index})">Inspeccionar</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // --- SISTEMA DE ALERTAS (DASHBOARD) ---
+        function renderDashboard() {
+            const alertsContainer = document.getElementById('alerts-container');
+            alertsContainer.innerHTML = '';
+            let alertsCount = 0;
+
+            document.getElementById('total-hives').innerText = appData.hives.length;
+
+            const today = new Date();
+
+            appData.hives.forEach(hive => {
+                // Alerta 1: Reina vieja (> 2 años). Asumimos 2026 como año actual según tu contexto.
+                if (2026 - hive.queenYear >= 2) {
+                    alertsContainer.innerHTML += `<div class="alert-item">Reina vieja en <strong>${hive.hiveId}</strong> (Año ${hive.queenYear}). Recomienda cambiar.</div>`;
+                    alertsCount++;
+                }
+
+                // Alerta 2: Sin visitas en 30 días
+                if (hive.lastVisit) {
+                    const lastDate = new Date(hive.lastVisit);
+                    const diffTime = Math.abs(today - lastDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    if (diffDays > 30) {
+                        alertsContainer.innerHTML += `<div class="alert-item"><strong>${hive.hiveId}</strong> lleva ${diffDays} días sin revisar.</div>`;
+                        alertsCount++;
+                    }
+                } else {
+                    alertsContainer.innerHTML += `<div class="alert-item"><strong>${hive.hiveId}</strong> nunca ha sido revisada.</div>`;
+                    alertsCount++;
+                }
+
+                // Aquí se podrían buscar tratamientos activos en appData.visits y avisar si toca retirarlos.
+            });
+
+            if (alertsCount === 0) {
+                alertsContainer.innerHTML = '<p style="color:var(--success);">✅ Todo al día. Ninguna alerta.</p>';
+            }
+            document.getElementById('total-alerts').innerText = alertsCount;
+        }
+
+        // --- INSPECCIÓN Y DETALLE DE CUADROS ---
+        function openInspection(hiveIndex) {
+            const hive = appData.hives[hiveIndex];
+            currentInspection.hiveId = hive.hiveId;
+            currentInspection.frames = {}; // Limpiar datos de cuadros actuales
+            
+            document.getElementById('ins-hive-title').innerText = `Inspección: ${hive.hiveId}`;
+            
+            // Buscar visita previa para el resumen
+            const prevVisits = appData.visits.filter(v => v.hiveId === hive.hiveId);
+            if (prevVisits.length > 0) {
+                const last = prevVisits[prevVisits.length - 1];
+                document.getElementById('ins-prev-info').innerText = `Fuerza: ${last.force} | ${last.feed ? 'Alimentada' : 'Sin alimento'}.`;
+            } else {
+                document.getElementById('ins-prev-info').innerText = 'Sin datos previos.';
+            }
+
+            // Dibujar cuadros (Trazabilidad)
+            const grid = document.getElementById('ins-frames-grid');
+            grid.innerHTML = '';
+            hive.frames.forEach(frame => {
+                const div = document.createElement('div');
+                div.className = 'frame-box';
+                div.id = `ui-frame-${frame.position}`;
+                // Mostramos un pedazo del ID único para evidenciar la trazabilidad
+                div.innerHTML = `C${frame.position}<br><span style="font-size:9px; font-weight:normal;">${frame.id.substring(0,4)}</span>`;
+                div.onclick = () => openFrameModal(frame.position);
+                grid.appendChild(div);
+            });
+
+            // Limpiar inputs
+            document.getElementById('ins-feed').value = '';
+            document.getElementById('ins-treatment').value = '';
+            document.getElementById('ins-notes').value = '';
+
+            document.getElementById('inspection-modal').classList.remove('hidden');
+        }
+
+        function openFrameModal(position) {
+            currentFrameIndex = position;
+            document.getElementById('frame-modal-title').innerText = `Detalle del Cuadro ${position}`;
+            document.getElementById('frame-modal').classList.remove('hidden');
+        }
+
+        function saveFrameDetail() {
+            // Guardamos la inspección de este cuadro en la variable temporal
+            currentInspection.frames[currentFrameIndex] = {
+                physical: document.getElementById('frame-physical').value,
+                brood: document.getElementById('frame-brood').value,
+                honey: document.getElementById('frame-honey').value
+            };
+            
+            // Cambiar color del cuadro para indicar que está revisado
+            document.getElementById(`ui-frame-${currentFrameIndex}`).classList.add('inspected');
+            closeModal('frame-modal');
+        }
+
+        function finishInspection() {
+            const hiveIndex = appData.hives.findIndex(h => h.hiveId === currentInspection.hiveId);
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const visitData = {
+                hiveId: currentInspection.hiveId,
+                date: todayStr,
+                force: document.getElementById('ins-force').value,
+                behavior: document.getElementById('ins-behavior').value,
+                feed: document.getElementById('ins-feed').value,
+                treatment: document.getElementById('ins-treatment').value,
+                notes: document.getElementById('ins-notes').value,
+                frameDetails: currentInspection.frames // Guardamos el estado detallado histórico
+            };
+
+            appData.visits.push(visitData);
+            appData.hives[hiveIndex].lastVisit = todayStr; // Actualizamos última visita
+
+            saveData();
+            closeModal('inspection-modal');
+            alert("Visita registrada correctamente con todos los detalles históricos.");
+            renderDashboard(); // Refrescar alertas
+        }
+
+        // --- DICTADO POR VOZ ---
+        function startDictation() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'es-ES';
+                recognition.interimResults = false;
+                
+                recognition.onstart = function() {
+                    alert("Escuchando... Habla ahora.");
+                };
+                
+                recognition.onresult = function(event) {
+                    const text = event.results[0][0].transcript;
+                    const notesArea = document.getElementById('ins-notes');
+                    notesArea.value += (notesArea.value ? ' ' : '') + text;
+                };
+                
+                recognition.onerror = function(event) {
+                    alert("Error en el dictado: " + event.error);
+                };
+                
+                recognition.start();
+            } else {
+                alert("Tu navegador no soporta el dictado por voz (Prueba con Chrome en Android).");
+            }
+        }
+
+        // --- UTILIDADES ---
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Inicializar
+        window.onload = checkSession;
+
+    </script>
 </body>
 </html>
