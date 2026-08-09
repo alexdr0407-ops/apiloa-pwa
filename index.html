@@ -24,6 +24,11 @@
         .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         input, select, textarea { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
         
+        /* Botones de Selección Interactivos */
+        .toggle-btn-group { display: flex; gap: 10px; margin: 5px 0 15px; }
+        .toggle-btn { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; color: var(--dark); border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; font-size: 14px; }
+        .toggle-btn.active { background: var(--primary); color: white; }
+
         /* Navegación */
         nav { position: fixed; bottom: 0; width: 100%; background: var(--primary); display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
         nav div { color: white; font-weight: bold; cursor: pointer; padding: 10px; text-align: center; font-size: 14px; }
@@ -157,15 +162,38 @@
                 <h3 style="margin-top: 15px;">2. Estado de Cuadros (Cámara y Alzas)</h3>
                 <p style="font-size:12px; color:#666; margin-bottom:10px;">Toca cualquier cuadro para detallar su contenido:</p>
                 
-                <!-- Contenedor dinámico de cuadros (Cámara + Alzas) -->
+                <!-- Contenedor dinámico de cuadros -->
                 <div id="frames-sections-container"></div>
 
                 <h3 style="margin-top: 15px;">3. Intervenciones</h3>
-                <label>Alimentación Suministrada:</label>
-                <input type="text" id="ins-feed" placeholder="Ej: 2 Litros Jarabe 2:1">
                 
+                <!-- ALIMENTACIÓN -->
+                <label>Alimentación Suministrada:</label>
+                <select id="ins-feed-type" onchange="toggleFeedProportion()">
+                    <option value="Ninguna">Ninguna</option>
+                    <option value="Sólido">Sólido</option>
+                    <option value="Líquido">Líquido</option>
+                    <option value="Ambos">Ambos (Sólido y Líquido)</option>
+                </select>
+
+                <div id="feed-prop-container" class="hidden">
+                    <label style="font-size: 13px; font-weight: bold; color: var(--primary);">Proporción del Jarabe (Líquido):</label>
+                    <div class="toggle-btn-group">
+                        <div id="prop-1-1" class="toggle-btn active" onclick="setFeedProportion('1:1')">1:1</div>
+                        <div id="prop-2-1" class="toggle-btn" onclick="setFeedProportion('2:1')">2:1</div>
+                    </div>
+                </div>
+
+                <!-- PROTEÍNA -->
+                <label>Proteína:</label>
+                <div class="toggle-btn-group">
+                    <div id="protein-si" class="toggle-btn" onclick="setProtein('Sí')">Sí</div>
+                    <div id="protein-no" class="toggle-btn active" onclick="setProtein('No')">No</div>
+                </div>
+
+                <!-- TRATAMIENTO SANITARIO -->
                 <label>Tratamiento Sanitario:</label>
-                <input type="text" id="ins-treatment" placeholder="Ej: Apivar (Inicio)">
+                <input type="text" id="ins-treatment" placeholder="Ej: Apivar, Varromed, etc.">
                 
                 <h3 style="margin-top: 15px;">4. Multimedia y Observaciones</h3>
                 <button class="btn" style="background: #e9c46a;" onclick="startDictation()">🎤 Dictar Observación</button>
@@ -179,7 +207,7 @@
             </div>
         </div>
 
-        <!-- MODAL DETALLE DE CUADRO ACTUALIZADO -->
+        <!-- MODAL DETALLE DE CUADRO -->
         <div id="frame-modal" class="modal hidden">
             <div class="modal-content">
                 <h3 id="frame-modal-title">Detalle del Cuadro</h3>
@@ -210,7 +238,7 @@
                 </select>
 
                 <div id="frame-brood-quality-container" class="hidden">
-                    <label>Tipo / Cantidad de Cría:</label>
+                    <label>Cantidad de Cría:</label>
                     <select id="frame-brood-quality">
                         <option value="Escasa">Escasa</option>
                         <option value="Media">Media</option>
@@ -221,29 +249,19 @@
                 </div>
 
                 <label>Miel:</label>
-                <select id="frame-honey-amount" onchange="toggleHoneyType()">
+                <select id="frame-honey-amount">
                     <option value="Nada">Nada</option>
-                    <option value="Muy poca">Muy poca</option>
                     <option value="Poca">Poca</option>
                     <option value="Media">Media</option>
                     <option value="Mucha">Mucha</option>
-                    <option value="Muy abundante">Muy abundante</option>
                 </select>
-
-                <div id="frame-honey-type-container" class="hidden">
-                    <label>Estado de la Miel:</label>
-                    <select id="frame-honey-type">
-                        <option value="Miel operculada">Miel operculada</option>
-                        <option value="Miel sin opercular o mixta">Miel sin opercular o mixta</option>
-                    </select>
-                </div>
 
                 <label>Polen:</label>
                 <select id="frame-pollen">
                     <option value="Nada">Nada</option>
-                    <option value="Poco">Poco</option>
-                    <option value="Medio">Medio</option>
-                    <option value="Mucho">Mucho</option>
+                    <option value="Poca">Poca</option>
+                    <option value="Media">Media</option>
+                    <option value="Mucha">Mucha</option>
                 </select>
 
                 <button class="btn btn-primary" onclick="saveFrameDetail()">Guardar Datos del Cuadro</button>
@@ -262,7 +280,7 @@
                         <option value="fuerza">Estado / Fuerza de la Colmena</option>
                         <option value="alzas">Número de Alzas</option>
                         <option value="cria">Cuadros con Cría (Total)</option>
-                        <option value="miel">Cuadros con Miel / Reservas (Total)</option>
+                        <option value="miel">Cuadros con Miel (Total)</option>
                         <option value="inspeccionados">Cuadros Inspeccionados</option>
                         <option value="renovar">Cuadros para Renovar / Viejos</option>
                     </select>
@@ -300,12 +318,17 @@
         let appData = {
             hives: [],
             visits: [],
-            dismissedAlerts: []
+            dismissedAlerts: [],
+            reminders: []
         };
         let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, photoBase64: null };
         let currentFrameKey = null;
         let currentHistoryVisits = [];
         let chartInstance = null;
+
+        // Variables de estado temporal para las intervenciones
+        let selectedFeedProportion = '1:1';
+        let selectedProtein = 'No';
 
         function getQueenColor(year) {
             const lastDigit = year.toString().slice(-1);
@@ -376,6 +399,7 @@
             const data = localStorage.getItem('colmenares_data');
             if (data) appData = JSON.parse(data);
             if (!appData.dismissedAlerts) appData.dismissedAlerts = [];
+            if (!appData.reminders) appData.reminders = [];
         }
 
         // --- NAVEGACIÓN ---
@@ -456,7 +480,7 @@
             });
         }
 
-        // --- DASHBOARD & ALERTAS ELIMINABLES ---
+        // --- DASHBOARD & ALERTAS ---
         function renderDashboard() {
             const alertsContainer = document.getElementById('alerts-container');
             alertsContainer.innerHTML = '';
@@ -464,7 +488,9 @@
 
             document.getElementById('total-hives').innerText = appData.hives.length;
             const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
 
+            // 1. Reinas antiguas e Inspecciones pendientes
             appData.hives.forEach(hive => {
                 const alertKeyOldQueen = `queen_${hive.hiveId}`;
                 if (2026 - hive.queenYear >= 2 && !appData.dismissedAlerts.includes(alertKeyOldQueen)) {
@@ -487,6 +513,16 @@
                     }
                 }
             });
+
+            // 2. Alertas Programadas por Semanas de Tratamiento Sanitario
+            if (appData.reminders) {
+                appData.reminders.forEach(rem => {
+                    if (!appData.dismissedAlerts.includes(rem.id) && todayStr >= rem.targetDate) {
+                        addAlertUI(alertsContainer, rem.id, `💊 <strong>Tratamiento en ${rem.hiveId}</strong>: Revisar / retirar "${rem.treatment}" (Programado para el ${rem.targetDate}).`);
+                        activeAlertsCount++;
+                    }
+                });
+            }
 
             if (activeAlertsCount === 0) {
                 alertsContainer.innerHTML = '<p style="color:var(--success);">✅ No hay alertas pendientes.</p>';
@@ -513,6 +549,29 @@
             }
         }
 
+        // --- CONTROLADORES DE INTERVENCIONES (ALIMENTACIÓN Y PROTEÍNA) ---
+        function toggleFeedProportion() {
+            const feedType = document.getElementById('ins-feed-type').value;
+            const container = document.getElementById('feed-prop-container');
+            if (feedType === 'Líquido' || feedType === 'Ambos') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function setFeedProportion(prop) {
+            selectedFeedProportion = prop;
+            document.getElementById('prop-1-1').classList.toggle('active', prop === '1:1');
+            document.getElementById('prop-2-1').classList.toggle('active', prop === '2:1');
+        }
+
+        function setProtein(val) {
+            selectedProtein = val;
+            document.getElementById('protein-si').classList.toggle('active', val === 'Sí');
+            document.getElementById('protein-no').classList.toggle('active', val === 'No');
+        }
+
         // --- INSPECCIÓN Y CONTROL DE CUADROS ---
         function openInspection(hiveIndex) {
             const hive = appData.hives[hiveIndex];
@@ -531,7 +590,11 @@
 
             renderInspectionFrames();
 
-            document.getElementById('ins-feed').value = '';
+            // Reseteo de campos de Intervenciones
+            document.getElementById('ins-feed-type').value = 'Ninguna';
+            toggleFeedProportion();
+            setFeedProportion('1:1');
+            setProtein('No');
             document.getElementById('ins-treatment').value = '';
             document.getElementById('ins-notes').value = '';
             document.getElementById('ins-photo-input').value = '';
@@ -585,21 +648,10 @@
             }
         }
 
-        // VISIBILIDAD CONDICIONAL DE DESPLEGABLES DE CRÍA Y MIEL
         function toggleBroodQuality() {
             const val = document.getElementById('frame-brood-presence').value;
             const container = document.getElementById('frame-brood-quality-container');
             if (val !== 'Sin cría') {
-                container.classList.remove('hidden');
-            } else {
-                container.classList.add('hidden');
-            }
-        }
-
-        function toggleHoneyType() {
-            const val = document.getElementById('frame-honey-amount').value;
-            const container = document.getElementById('frame-honey-type-container');
-            if (val !== 'Nada') {
                 container.classList.remove('hidden');
             } else {
                 container.classList.add('hidden');
@@ -617,7 +669,6 @@
                 document.getElementById('frame-brood-presence').value = existing.broodPresence || 'Sin cría';
                 document.getElementById('frame-brood-quality').value = existing.broodQuality || 'Media';
                 document.getElementById('frame-honey-amount').value = existing.honeyAmount || 'Nada';
-                document.getElementById('frame-honey-type').value = existing.honeyType || 'Miel operculada';
                 document.getElementById('frame-pollen').value = existing.pollen || 'Nada';
             } else {
                 document.getElementById('frame-type').value = 'Cuadro de cera estampada';
@@ -625,28 +676,23 @@
                 document.getElementById('frame-brood-presence').value = 'Sin cría';
                 document.getElementById('frame-brood-quality').value = 'Media';
                 document.getElementById('frame-honey-amount').value = 'Nada';
-                document.getElementById('frame-honey-type').value = 'Miel operculada';
                 document.getElementById('frame-pollen').value = 'Nada';
             }
 
             toggleBroodQuality();
-            toggleHoneyType();
-
             document.getElementById('frame-modal').classList.remove('hidden');
         }
 
         function saveFrameDetail() {
             if (!currentFrameKey) return;
             const broodPresence = document.getElementById('frame-brood-presence').value;
-            const honeyAmount = document.getElementById('frame-honey-amount').value;
 
             currentInspection.frames[currentFrameKey] = {
                 type: document.getElementById('frame-type').value,
                 physical: document.getElementById('frame-physical').value,
                 broodPresence: broodPresence,
                 broodQuality: broodPresence !== 'Sin cría' ? document.getElementById('frame-brood-quality').value : null,
-                honeyAmount: honeyAmount,
-                honeyType: honeyAmount !== 'Nada' ? document.getElementById('frame-honey-type').value : null,
+                honeyAmount: document.getElementById('frame-honey-amount').value,
                 pollen: document.getElementById('frame-pollen').value
             };
 
@@ -657,8 +703,17 @@
 
         function finishInspection() {
             const hiveIndex = appData.hives.findIndex(h => h.hiveId === currentInspection.hiveId);
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayObj = new Date();
+            const todayStr = todayObj.toISOString().split('T')[0];
             const fileInput = document.getElementById('ins-photo-input');
+            const treatmentText = document.getElementById('ins-treatment').value.trim();
+
+            // Construir texto de Alimentación
+            const feedType = document.getElementById('ins-feed-type').value;
+            let finalFeedText = feedType;
+            if (feedType === 'Líquido' || feedType === 'Ambos') {
+                finalFeedText += ` (Jarabe ${selectedFeedProportion})`;
+            }
 
             const completeSave = (photoData) => {
                 const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
@@ -670,12 +725,35 @@
                     force: document.getElementById('ins-force').value,
                     alzas: numAlzas,
                     behavior: document.getElementById('ins-behavior').value,
-                    feed: document.getElementById('ins-feed').value,
-                    treatment: document.getElementById('ins-treatment').value,
+                    feed: finalFeedText,
+                    protein: selectedProtein,
+                    treatment: treatmentText,
                     notes: document.getElementById('ins-notes').value,
                     photo: photoData,
                     frameDetails: currentInspection.frames
                 };
+
+                // PROGRAMACIÓN DE ALERTA DE TRATAMIENTO SANITARIO (EN SEMANAS)
+                if (treatmentText !== '') {
+                    const weeksInput = prompt(`Has anotado un tratamiento sanitario:\n"${treatmentText}"\n\n¿En cuántas SEMANAS quieres programar la alerta para revisar/retirar? (Ej: 1, 2, 4, 6 semanas)`, "2");
+                    if (weeksInput !== null) {
+                        const weeks = parseInt(weeksInput, 10);
+                        if (!isNaN(weeks) && weeks >= 0) {
+                            const targetDate = new Date();
+                            targetDate.setDate(targetDate.getDate() + (weeks * 7)); // Conversión a días
+                            const targetStr = targetDate.toISOString().split('T')[0];
+
+                            if (!appData.reminders) appData.reminders = [];
+                            appData.reminders.push({
+                                id: 'rem_' + generateID(),
+                                hiveId: currentInspection.hiveId,
+                                treatment: treatmentText,
+                                targetDate: targetStr,
+                                weeks: weeks
+                            });
+                        }
+                    }
+                }
 
                 appData.visits.push(visitData);
                 appData.hives[hiveIndex].lastVisit = todayStr;
@@ -772,20 +850,14 @@
                     labelText = 'Cuadros con Cría';
                     dataPoints = currentHistoryVisits.map(v => {
                         if (!v.frameDetails) return 0;
-                        return Object.values(v.frameDetails).filter(f => 
-                            (f.broodPresence && f.broodPresence !== 'Sin cría') || 
-                            (f.brood && f.brood !== 'Sin Cría')
-                        ).length;
+                        return Object.values(v.frameDetails).filter(f => f.broodPresence && f.broodPresence !== 'Sin cría').length;
                     });
                     break;
                 case 'miel':
-                    labelText = 'Cuadros con Miel / Reservas';
+                    labelText = 'Cuadros con Miel';
                     dataPoints = currentHistoryVisits.map(v => {
                         if (!v.frameDetails) return 0;
-                        return Object.values(v.frameDetails).filter(f => 
-                            (f.honeyAmount && f.honeyAmount !== 'Nada') || 
-                            (f.honey && f.honey !== 'Vacío')
-                        ).length;
+                        return Object.values(v.frameDetails).filter(f => f.honeyAmount && f.honeyAmount !== 'Nada').length;
                     });
                     break;
                 case 'inspeccionados':
@@ -799,12 +871,7 @@
                     labelText = 'Cuadros Para Renovar / Viejos';
                     dataPoints = currentHistoryVisits.map(v => {
                         if (!v.frameDetails) return 0;
-                        return Object.values(v.frameDetails).filter(f => 
-                            f.physical === 'Mal estado' || 
-                            f.physical === 'Viejo' || 
-                            f.physical === 'Para Renovar' || 
-                            f.physical === 'Viejo/Negro'
-                        ).length;
+                        return Object.values(v.frameDetails).filter(f => f.physical === 'Mal estado' || f.physical === 'Viejo').length;
                     });
                     break;
             }
@@ -885,13 +952,9 @@
                             if (f.type) detailsHTML += `<span style="color:#d4a373; font-weight:bold;">${f.type}</span><br>`;
                             if (f.broodPresence && f.broodPresence !== 'Sin cría') {
                                 detailsHTML += `Cría: ${f.broodPresence} (${f.broodQuality || ''})<br>`;
-                            } else if (f.brood && f.brood !== 'Sin Cría') {
-                                detailsHTML += `Cría: ${f.brood}<br>`;
                             }
                             if (f.honeyAmount && f.honeyAmount !== 'Nada') {
                                 detailsHTML += `Miel: ${f.honeyAmount}<br>`;
-                            } else if (f.honey && f.honey !== 'Vacío') {
-                                detailsHTML += `Miel: ${f.honey}<br>`;
                             }
                             if (f.pollen && f.pollen !== 'Nada') {
                                 detailsHTML += `Polen: ${f.pollen}<br>`;
@@ -916,6 +979,7 @@
                 <p><strong>Alzas:</strong> ${visit.alzas || 0}</p>
                 <p><strong>Comportamiento:</strong> ${visit.behavior}</p>
                 <p><strong>Alimentación:</strong> ${visit.feed || 'Ninguna'}</p>
+                <p><strong>Proteína:</strong> ${visit.protein || 'No'}</p>
                 <p><strong>Tratamiento:</strong> ${visit.treatment || 'Ninguno'}</p>
                 <p><strong>Observaciones:</strong> ${visit.notes || 'Sin observaciones'}</p>
                 <h4 style="margin-top:10px;">Estado de Cuadros Inspeccionados:</h4>
