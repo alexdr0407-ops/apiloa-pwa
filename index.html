@@ -37,13 +37,13 @@
         .dismiss-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; color: #999; margin-left: 10px; }
 
         /* Cuadros Grid */
-        .frames-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 10px; }
-        .frame-box { background: var(--secondary); border: 2px solid var(--primary); border-radius: 5px; height: 75px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; flex-direction: column; font-size: 11px; text-align: center; }
+        .frames-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 5px; margin-bottom: 10px; }
+        .frame-box { background: var(--secondary); border: 2px solid var(--primary); border-radius: 5px; height: 65px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; flex-direction: column; font-size: 11px; text-align: center; }
         .frame-box.inspected { background: var(--success); color: white; border-color: #1e7168; }
         
         /* Modales */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
         
         /* Tags & Previews */
         .queen-color { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid #000; margin-left: 5px; vertical-align: middle; }
@@ -106,10 +106,10 @@
                 <label>Identificador de la Unidad:</label>
                 <input type="text" id="new-hive-id" placeholder="Ej: M-023 o ENJ-01">
                 
+                <!-- CAMBIO 1: Estado Inicial únicamente Activa o Débil -->
                 <label>Estado Inicial:</label>
                 <select id="new-hive-state">
                     <option value="Activa">Activa</option>
-                    <option value="Núcleo">Núcleo</option>
                     <option value="Débil">Débil</option>
                 </select>
                 
@@ -140,12 +140,13 @@
                     <option value="Débil">Débil</option>
                 </select>
 
-                <label>Número de Alzas Añadidas/Presentes (Máx 3):</label>
-                <select id="ins-alzas">
+                <!-- CAMBIO 2: Selección de alzas actualiza dinámicamente los cuadros de cada alza -->
+                <label>Número de Alzas Presentes/Añadidas (Máx 3):</label>
+                <select id="ins-alzas" onchange="renderInspectionFrames()">
                     <option value="0">0 Alzas</option>
-                    <option value="1">1 Alza</option>
-                    <option value="2">2 Alzas</option>
-                    <option value="3">3 Alzas</option>
+                    <option value="1">1 Alza (10 Cuadros)</option>
+                    <option value="2">2 Alzas (20 Cuadros)</option>
+                    <option value="3">3 Alzas (30 Cuadros)</option>
                 </select>
 
                 <label>Comportamiento:</label>
@@ -155,8 +156,11 @@
                     <option value="Agresiva">Agresiva</option>
                 </select>
                 
-                <h3 style="margin-top: 15px;">2. Estado de Cuadros</h3>
-                <div class="frames-grid" id="ins-frames-grid"></div>
+                <h3 style="margin-top: 15px;">2. Estado de Cuadros (Cámara y Alzas)</h3>
+                <p style="font-size:12px; color:#666; margin-bottom:10px;">Toca cualquier cuadro para detallar su contenido:</p>
+                
+                <!-- Contenedor dinámico de cuadros (Cámara + Alzas) -->
+                <div id="frames-sections-container"></div>
 
                 <h3 style="margin-top: 15px;">3. Intervenciones</h3>
                 <label>Alimentación Suministrada:</label>
@@ -209,15 +213,26 @@
             </div>
         </div>
 
-        <!-- MODAL HISTORIAL COMPLETO DE COLMENA Y GRÁFICOS -->
+        <!-- MODAL HISTORIAL COMPLETO DE COLMENA Y GRÁFICOS DINÁMICOS -->
         <div id="history-modal" class="modal hidden">
             <div class="modal-content" style="max-width: 500px;">
                 <h2 id="history-hive-title" style="color: var(--primary);">Historial de la Colmena</h2>
                 
-                <!-- Contenedor del Gráfico -->
+                <!-- CAMBIO 3: Opciones personalizables de gráficos -->
                 <div class="card" style="margin-top: 10px;">
-                    <h4>Evolución de Fuerza</h4>
-                    <canvas id="evolutionChart" style="max-height: 200px;"></canvas>
+                    <h4 style="margin-bottom:8px;">📈 Evolución Gráfica</h4>
+                    <label style="font-size:12px; font-weight:bold;">Métrica a Analizar:</label>
+                    <select id="chart-metric-select" onchange="updateHistoryChart()" style="margin-bottom:10px;">
+                        <option value="fuerza">Estado / Fuerza de la Colmena</option>
+                        <option value="alzas">Número de Alzas</option>
+                        <option value="cria">Cuadros con Cría (Total)</option>
+                        <option value="miel">Cuadros con Miel / Reservas (Total)</option>
+                        <option value="inspeccionados">Cuadros Inspeccionados</option>
+                        <option value="renovar">Cuadros para Renovar / Viejos</option>
+                    </select>
+                    <div style="position: relative; height:200px; width:100%;">
+                        <canvas id="evolutionChart"></canvas>
+                    </div>
                 </div>
 
                 <h3>Registros e Inspecciones</h3>
@@ -251,8 +266,9 @@
             visits: [],
             dismissedAlerts: []
         };
-        let currentInspection = { hiveId: null, frames: {}, photoBase64: null };
-        let currentFrameIndex = null;
+        let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, photoBase64: null };
+        let currentFrameKey = null;
+        let currentHistoryVisits = [];
         let chartInstance = null;
 
         function getQueenColor(year) {
@@ -453,7 +469,6 @@
             `;
             container.appendChild(div);
             
-            // Disparar Notificación Nativa Móvil si es una nueva alerta
             triggerNotification("Alerta en Colmenar", messageHTML.replace(/<[^>]*>?/gm, ''));
         }
 
@@ -465,10 +480,10 @@
             }
         }
 
-        // --- INSPECCIÓN Y ALZAS ---
+        // --- INSPECCIÓN Y CONTROL DE CUADROS POR ALZA ---
         function openInspection(hiveIndex) {
             const hive = appData.hives[hiveIndex];
-            currentInspection = { hiveId: hive.hiveId, frames: {}, photoBase64: null };
+            currentInspection = { hiveId: hive.hiveId, hiveIndex: hiveIndex, frames: {}, photoBase64: null };
             
             document.getElementById('ins-hive-title').innerText = `Inspección: ${hive.hiveId}`;
             document.getElementById('ins-alzas').value = hive.alzas || 0;
@@ -481,16 +496,7 @@
                 document.getElementById('ins-prev-info').innerText = 'Sin visitas previas.';
             }
 
-            const grid = document.getElementById('ins-frames-grid');
-            grid.innerHTML = '';
-            hive.frames.forEach(frame => {
-                const div = document.createElement('div');
-                div.className = 'frame-box';
-                div.id = `ui-frame-${frame.position}`;
-                div.innerHTML = `C${frame.position}<br><span style="font-size:8px; opacity:0.8;">${frame.id.substring(0,5)}</span>`;
-                div.onclick = () => openFrameModal(frame.position);
-                grid.appendChild(div);
-            });
+            renderInspectionFrames();
 
             document.getElementById('ins-feed').value = '';
             document.getElementById('ins-treatment').value = '';
@@ -500,19 +506,79 @@
             document.getElementById('inspection-modal').classList.remove('hidden');
         }
 
-        function openFrameModal(position) {
-            currentFrameIndex = position;
-            document.getElementById('frame-modal-title').innerText = `Detalle del Cuadro ${position}`;
+        // Renderiza los cuadros de la cámara y de cada alza (hasta 10 cuadros por alza)
+        function renderInspectionFrames() {
+            const hive = appData.hives[currentInspection.hiveIndex];
+            if (!hive) return;
+            const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
+            const container = document.getElementById('frames-sections-container');
+            container.innerHTML = '';
+
+            // 1. Cámara de Cría
+            const camaraDiv = document.createElement('div');
+            camaraDiv.innerHTML = `<h4 style="margin:10px 0 5px; color:var(--primary);">Cámara de Cría (${hive.frames.length} Cuadros)</h4>`;
+            const camaraGrid = document.createElement('div');
+            camaraGrid.className = 'frames-grid';
+            for (let i = 1; i <= hive.frames.length; i++) {
+                const key = `camara_${i}`;
+                const isInspected = !!currentInspection.frames[key];
+                const box = document.createElement('div');
+                box.className = `frame-box ${isInspected ? 'inspected' : ''}`;
+                box.id = `ui-frame-${key}`;
+                box.innerHTML = `C${i}`;
+                box.onclick = () => openFrameModal(key, `Cámara - Cuadro ${i}`);
+                camaraGrid.appendChild(box);
+            }
+            camaraDiv.appendChild(camaraGrid);
+            container.appendChild(camaraDiv);
+
+            // 2. Alzas (Hasta 3 alzas, cada una con 10 cuadros)
+            for (let a = 1; a <= numAlzas; a++) {
+                const alzaDiv = document.createElement('div');
+                alzaDiv.innerHTML = `<h4 style="margin:15px 0 5px; color:var(--primary);">Alza ${a} (10 Cuadros)</h4>`;
+                const alzaGrid = document.createElement('div');
+                alzaGrid.className = 'frames-grid';
+                for (let i = 1; i <= 10; i++) {
+                    const key = `alza${a}_${i}`;
+                    const isInspected = !!currentInspection.frames[key];
+                    const box = document.createElement('div');
+                    box.className = `frame-box ${isInspected ? 'inspected' : ''}`;
+                    box.id = `ui-frame-${key}`;
+                    box.innerHTML = `A${a}-C${i}`;
+                    box.onclick = () => openFrameModal(key, `Alza ${a} - Cuadro ${i}`);
+                    alzaGrid.appendChild(box);
+                }
+                alzaDiv.appendChild(alzaGrid);
+                container.appendChild(alzaDiv);
+            }
+        }
+
+        function openFrameModal(key, displayName) {
+            currentFrameKey = key;
+            document.getElementById('frame-modal-title').innerText = displayName;
+            
+            if (currentInspection.frames[key]) {
+                document.getElementById('frame-physical').value = currentInspection.frames[key].physical;
+                document.getElementById('frame-brood').value = currentInspection.frames[key].brood;
+                document.getElementById('frame-honey').value = currentInspection.frames[key].honey;
+            } else {
+                document.getElementById('frame-physical').value = 'Bueno';
+                document.getElementById('frame-brood').value = 'Sin Cría';
+                document.getElementById('frame-honey').value = 'Vacío';
+            }
+
             document.getElementById('frame-modal').classList.remove('hidden');
         }
 
         function saveFrameDetail() {
-            currentInspection.frames[currentFrameIndex] = {
+            if (!currentFrameKey) return;
+            currentInspection.frames[currentFrameKey] = {
                 physical: document.getElementById('frame-physical').value,
                 brood: document.getElementById('frame-brood').value,
                 honey: document.getElementById('frame-honey').value
             };
-            document.getElementById(`ui-frame-${currentFrameIndex}`).classList.add('inspected');
+            const el = document.getElementById(`ui-frame-${currentFrameKey}`);
+            if (el) el.classList.add('inspected');
             closeModal('frame-modal');
         }
 
@@ -540,7 +606,7 @@
 
                 appData.visits.push(visitData);
                 appData.hives[hiveIndex].lastVisit = todayStr;
-                appData.hives[hiveIndex].alzas = numAlzas; // Actualizar número de alzas
+                appData.hives[hiveIndex].alzas = numAlzas;
 
                 saveData();
                 closeModal('inspection-modal');
@@ -577,17 +643,22 @@
             }
         }
 
-        // --- HISTORIAL COMPLETO Y GRÁFICOS (CHART.JS) ---
+        // --- HISTORIAL Y GRÁFICOS PERSONALIZADOS (CHART.JS) ---
         function openHiveHistory(hiveId) {
             document.getElementById('history-hive-title').innerText = `Historial: ${hiveId}`;
-            const visits = appData.visits.filter(v => v.hiveId === hiveId);
+            const rawVisits = appData.visits.filter(v => v.hiveId === hiveId);
+            
+            // Ordenar de más antiguo a más reciente para el gráfico
+            currentHistoryVisits = rawVisits.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
             const listContainer = document.getElementById('history-list');
             listContainer.innerHTML = '';
 
-            if (visits.length === 0) {
+            if (currentHistoryVisits.length === 0) {
                 listContainer.innerHTML = '<p>No hay inspecciones registradas para esta unidad.</p>';
             } else {
-                visits.reverse().forEach(visit => {
+                // Mostrar en la lista del más reciente al más antiguo
+                [...currentHistoryVisits].reverse().forEach(visit => {
                     const div = document.createElement('div');
                     div.className = 'history-entry';
                     div.onclick = () => showVisitDetail(visit.visitId);
@@ -599,17 +670,64 @@
                 });
             }
 
-            renderEvolutionChart(visits);
+            updateHistoryChart();
             document.getElementById('history-modal').classList.remove('hidden');
         }
 
-        function renderEvolutionChart(visits) {
+        // Genera el gráfico según la opción elegida por el usuario
+        function updateHistoryChart() {
+            if (currentHistoryVisits.length === 0) return;
+            
+            const metric = document.getElementById('chart-metric-select').value;
             const ctx = document.getElementById('evolutionChart').getContext('2d');
             
-            // Mapear fuerza a valor numérico para la gráfica
-            const forceMap = { 'Débil': 1, 'Media': 2, 'Fuerte': 3 };
-            const labels = visits.map(v => v.date);
-            const dataPoints = visits.map(v => forceMap[v.force] || 1);
+            const labels = currentHistoryVisits.map(v => v.date);
+            let dataPoints = [];
+            let labelText = '';
+            let minY = 0;
+            let maxY = undefined;
+
+            switch (metric) {
+                case 'fuerza':
+                    labelText = 'Fuerza (1: Débil, 2: Media, 3: Fuerte)';
+                    const forceMap = { 'Débil': 1, 'Media': 2, 'Fuerte': 3 };
+                    dataPoints = currentHistoryVisits.map(v => forceMap[v.force] || 1);
+                    maxY = 4;
+                    break;
+                case 'alzas':
+                    labelText = 'Número de Alzas';
+                    dataPoints = currentHistoryVisits.map(v => v.alzas || 0);
+                    maxY = 4;
+                    break;
+                case 'cria':
+                    labelText = 'Cuadros con Cría';
+                    dataPoints = currentHistoryVisits.map(v => {
+                        if (!v.frameDetails) return 0;
+                        return Object.values(v.frameDetails).filter(f => f.brood && f.brood !== 'Sin Cría').length;
+                    });
+                    break;
+                case 'miel':
+                    labelText = 'Cuadros con Miel / Reservas';
+                    dataPoints = currentHistoryVisits.map(v => {
+                        if (!v.frameDetails) return 0;
+                        return Object.values(v.frameDetails).filter(f => f.honey && f.honey !== 'Vacío').length;
+                    });
+                    break;
+                case 'inspeccionados':
+                    labelText = 'Total Cuadros Inspeccionados';
+                    dataPoints = currentHistoryVisits.map(v => {
+                        if (!v.frameDetails) return 0;
+                        return Object.keys(v.frameDetails).length;
+                    });
+                    break;
+                case 'renovar':
+                    labelText = 'Cuadros Para Renovar / Viejos';
+                    dataPoints = currentHistoryVisits.map(v => {
+                        if (!v.frameDetails) return 0;
+                        return Object.values(v.frameDetails).filter(f => f.physical === 'Para Renovar' || f.physical === 'Viejo/Negro').length;
+                    });
+                    break;
+            }
 
             if (chartInstance) chartInstance.destroy();
 
@@ -618,22 +736,32 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Fuerza de la Colonia (1: Débil, 2: Media, 3: Fuerte)',
+                        label: labelText,
                         data: dataPoints,
                         borderColor: '#d4a373',
-                        backgroundColor: 'rgba(212, 163, 115, 0.2)',
+                        backgroundColor: 'rgba(212, 163, 115, 0.25)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#2a9d8f',
+                        pointRadius: 4,
                         fill: true,
                         tension: 0.3
                     }]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     scales: {
-                        y: { min: 0, max: 4, ticks: { stepSize: 1 } }
+                        y: { 
+                            min: minY, 
+                            max: maxY, 
+                            ticks: { precision: 0 } 
+                        }
                     }
                 }
             });
         }
 
+        // Muestra el detalle de una visita específica clasificado por Cámara y Alzas
         function showVisitDetail(visitId) {
             const visit = appData.visits.find(v => v.visitId === visitId);
             if (!visit) return;
@@ -641,17 +769,47 @@
             document.getElementById('visit-detail-title').innerText = `Inspección del ${visit.date}`;
             const body = document.getElementById('visit-detail-body');
             
-            let framesHTML = '<div class="frames-grid">';
-            if (visit.frameDetails) {
-                Object.keys(visit.frameDetails).forEach(pos => {
-                    const f = visit.frameDetails[pos];
-                    framesHTML += `
-                        <div class="frame-box inspected" style="font-size:9px; height:65px;">
-                            C${pos}<br>${f.brood}<br>${f.honey}
-                        </div>`;
+            let framesContent = '';
+            if (visit.frameDetails && Object.keys(visit.frameDetails).length > 0) {
+                const groups = { 'Cámara de Cría': [], 'Alza 1': [], 'Alza 2': [], 'Alza 3': [] };
+
+                Object.keys(visit.frameDetails).forEach(key => {
+                    const f = visit.frameDetails[key];
+                    let label = key;
+                    if (key.startsWith('camara_')) {
+                        label = `C${key.split('_')[1]}`;
+                        groups['Cámara de Cría'].push({ label, f });
+                    } else if (key.startsWith('alza1_')) {
+                        label = `A1-C${key.split('_')[1]}`;
+                        groups['Alza 1'].push({ label, f });
+                    } else if (key.startsWith('alza2_')) {
+                        label = `A2-C${key.split('_')[1]}`;
+                        groups['Alza 2'].push({ label, f });
+                    } else if (key.startsWith('alza3_')) {
+                        label = `A3-C${key.split('_')[1]}`;
+                        groups['Alza 3'].push({ label, f });
+                    } else { 
+                        label = `C${key}`;
+                        groups['Cámara de Cría'].push({ label, f });
+                    }
                 });
+
+                Object.keys(groups).forEach(groupName => {
+                    if (groups[groupName].length > 0) {
+                        framesContent += `<h5 style="margin-top:10px; margin-bottom:5px; color:var(--primary);">${groupName}</h5>`;
+                        framesContent += '<div class="frames-grid">';
+                        groups[groupName].forEach(item => {
+                            framesContent += `
+                                <div class="frame-box inspected" style="font-size:9px; height:65px;">
+                                    <strong>${item.label}</strong><br>${item.f.brood}<br>${item.f.honey}
+                                </div>`;
+                        });
+                        framesContent += '</div>';
+                    }
+                });
+            } else {
+                framesContent = '<p style="font-size:12px; color:#777;">No se detallaron cuadros en esta visita.</p>';
             }
-            framesHTML += '</div>';
 
             body.innerHTML = `
                 <p><strong>Fuerza:</strong> ${visit.force}</p>
@@ -660,8 +818,8 @@
                 <p><strong>Alimentación:</strong> ${visit.feed || 'Ninguna'}</p>
                 <p><strong>Tratamiento:</strong> ${visit.treatment || 'Ninguno'}</p>
                 <p><strong>Observaciones:</strong> ${visit.notes || 'Sin observaciones'}</p>
-                <h4 style="margin-top:10px;">Estado registrado de cuadros:</h4>
-                ${framesHTML}
+                <h4 style="margin-top:10px;">Estado de Cuadros Inspeccionados:</h4>
+                ${framesContent}
                 ${visit.photo ? `<h4 style="margin-top:10px;">Fotografía:</h4><img src="${visit.photo}" class="photo-preview">` : ''}
             `;
 
