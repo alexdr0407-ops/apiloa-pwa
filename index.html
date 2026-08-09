@@ -954,25 +954,39 @@
         function openInspection(hiveIndex) {
             editingVisitId = null;
             const hive = appData.hives[hiveIndex];
-            currentInspection = { hiveId: hive.hiveId, hiveIndex: hiveIndex, frames: {}, movements: {}, photoBase64: null };
+            
+            // 1. Obtener la última inspección de esta unidad
+            const prevVisits = appData.visits.filter(v => v.hiveId === hive.hiveId);
+            const lastVisit = prevVisits.length > 0 ? prevVisits[prevVisits.length - 1] : null;
+
+            // 2. Clonar el estado de los cuadros de la inspección anterior (o iniciar vacío)
+            const copiedFrames = lastVisit && lastVisit.frameDetails ? JSON.parse(JSON.stringify(lastVisit.frameDetails)) : {};
+
+            currentInspection = { 
+                hiveId: hive.hiveId, 
+                hiveIndex: hiveIndex, 
+                frames: copiedFrames, 
+                movements: {}, 
+                photoBase64: null 
+            };
             
             document.getElementById('ins-hive-title').innerText = `Nueva Inspección: ${hive.hiveId}`;
             document.getElementById('ins-badge-label').innerText = "Información:";
             document.getElementById('photo-input-label').innerText = "Adjuntar Fotografía";
             document.getElementById('btn-save-inspection').innerText = "Guardar Registro";
 
-            document.getElementById('ins-alzas').value = hive.alzas || 0;
-            
-            const prevVisits = appData.visits.filter(v => v.hiveId === hive.hiveId);
-            if (prevVisits.length > 0) {
-                const last = prevVisits[prevVisits.length - 1];
-                document.getElementById('ins-prev-info').innerText = `Última visita (${last.date}): Fuerza ${last.force} | Alzas ${last.alzas || 0}`;
+            // 3. Cargar datos generales anteriores (Alzas, Fuerza, Comportamiento) si existen
+            document.getElementById('ins-alzas').value = lastVisit ? (lastVisit.alzas || 0) : (hive.alzas || 0);
+            document.getElementById('ins-force').value = lastVisit ? lastVisit.force : 'Fuerte';
+            document.getElementById('ins-behavior').value = lastVisit ? lastVisit.behavior : 'Tranquila';
+
+            if (lastVisit) {
+                document.getElementById('ins-prev-info').innerText = `Cargados datos de la revisión del ${lastVisit.date} (Cuadros y Estado General).`;
             } else {
-                document.getElementById('ins-prev-info').innerText = 'Sin visitas previas.';
+                document.getElementById('ins-prev-info').innerText = 'Sin visitas previas. Se inicia con plantilla nueva.';
             }
 
-            document.getElementById('ins-force').value = 'Fuerte';
-            document.getElementById('ins-behavior').value = 'Tranquila';
+            // 4. EXCLUIR Y RESETEAR: Comida, Medicamentos/Tratamiento, Notas y Fotografía
             document.getElementById('ins-feed-type').value = 'Ninguna';
             toggleFeedProportion();
             setFeedProportion('1:1');
@@ -1003,7 +1017,7 @@
 
             document.getElementById('ins-hive-title').innerText = `Editar Inspección: ${visit.hiveId}`;
             document.getElementById('ins-badge-label').innerText = "📅 Fecha Fija:";
-            document.getElementById('ins-prev-info').innerHTML = `<strong>${visit.date}</strong> (Sólo puedes cambiar contenidos)`;
+            document.getElementById('ins-prev-info').innerHTML = `<strong>${visit.date}</strong> (Modificando registro existente)`;
             document.getElementById('photo-input-label').innerText = visit.photo ? "Cambiar Fotografía (Ya tiene una guardada)" : "Adjuntar Fotografía";
             document.getElementById('btn-save-inspection').innerText = "Actualizar Registro";
 
