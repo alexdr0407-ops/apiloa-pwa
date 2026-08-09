@@ -37,7 +37,7 @@
         /* Comportamiento de App Nativa sin scrollbars de navegador */
         html, body { 
             height: 100%;
-            overscroll-behavior-y: none; /* Desactiva el recargar al estirar hacia abajo */
+            overscroll-behavior-y: none;
             -webkit-tap-highlight-color: transparent;
             -webkit-user-select: none;
             user-select: none;
@@ -48,10 +48,10 @@
             margin: 0; 
             padding: 0; 
             font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            scrollbar-width: none; /* Oculta scrollbar en Firefox */
+            scrollbar-width: none;
         }
 
-        ::-webkit-scrollbar { display: none; } /* Oculta scrollbar en Chrome/Samsung */
+        ::-webkit-scrollbar { display: none; }
 
         body { 
             background-color: var(--samsung-bg); 
@@ -86,6 +86,7 @@
         .btn-danger { background: var(--samsung-danger); color: white; }
         .btn-success { background: var(--samsung-success); color: white; }
         .btn-info { background: var(--samsung-soft-blue); color: var(--samsung-blue); }
+        .btn-warning { background: var(--samsung-warning); color: white; }
 
         .card { 
             background: var(--samsung-card); 
@@ -125,7 +126,6 @@
             background-color: #FFFFFF;
         }
         
-        /* Botones de Selección */
         .toggle-btn-group { display: flex; gap: 10px; margin: 8px 0 15px; }
         .toggle-btn { 
             flex: 1; 
@@ -146,7 +146,6 @@
             border-color: var(--samsung-blue);
         }
 
-        /* Navegación Estilo Samsung One UI */
         nav { 
             position: fixed; 
             bottom: calc(15px + env(safe-area-inset-bottom, 0px)); 
@@ -229,15 +228,26 @@
             font-weight: 700; 
             cursor: pointer; 
             flex-direction: column; 
-            font-size: 12px; 
+            font-size: 11px; 
             text-align: center; 
             color: var(--samsung-dark);
             transition: all 0.2s;
+            position: relative;
         }
         .frame-box.inspected { 
             background: var(--samsung-blue); 
             color: white; 
             border-color: var(--samsung-blue-dark); 
+        }
+        .frame-box .tag-moved {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: var(--samsung-warning);
+            color: white;
+            font-size: 8px;
+            padding: 1px 4px;
+            border-radius: 6px;
         }
         
         /* Modales Samsung One UI */
@@ -390,7 +400,6 @@
                 <div class="modal-handle"></div>
                 <h2 id="ins-hive-title" style="margin-bottom: 10px; color: var(--samsung-dark);">Inspección</h2>
                 
-                <!-- Indicador de fecha / estado -->
                 <div id="ins-prev-badge" class="card" style="background: var(--samsung-soft-blue); padding: 12px 16px; margin-bottom: 15px;">
                     <strong style="color: var(--samsung-blue);" id="ins-badge-label">Información:</strong> 
                     <span id="ins-prev-info" style="font-size: 13px;">Sin datos previos.</span>
@@ -420,7 +429,7 @@
                 </select>
                 
                 <h3 style="margin-top: 20px; font-size: 16px;">2. Estado de Cuadros</h3>
-                <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:10px;">Toca cualquier cuadro para detallar su contenido:</p>
+                <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:10px;">Toca cualquier cuadro para detallar, mover o cambiar su contenido:</p>
                 
                 <div id="frames-sections-container"></div>
 
@@ -463,7 +472,7 @@
             </div>
         </div>
 
-        <!-- MODAL DETALLE DE CUADRO -->
+        <!-- MODAL DETALLE Y GESTIÓN DE CUADRO -->
         <div id="frame-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-handle"></div>
@@ -521,6 +530,19 @@
                     <option value="Mucha">Mucha</option>
                 </select>
 
+                <!-- MOVER / CAMBIAR ORDEN Y REEMPLAZAR -->
+                <div style="margin-top:15px; padding-top:15px; border-top:1px solid #E0E0E0;">
+                    <h4 style="font-size: 14px; margin-bottom: 8px; color: var(--samsung-dark);">🔄 Cambiar Posición / Reemplazar</h4>
+                    
+                    <label>Intercambiar lugar con:</label>
+                    <div style="display:flex; gap:8px;">
+                        <select id="swap-target-select" style="margin-bottom:0;"></select>
+                        <button class="btn btn-info" style="width:auto; margin-top:0; padding:10px 14px;" onclick="executeSwap()">Mover</button>
+                    </div>
+
+                    <button class="btn btn-warning" style="margin-top:10px;" onclick="executeReplace()">🆕 Reemplazar por Cuadro Nuevo</button>
+                </div>
+
                 <button class="btn btn-primary" onclick="saveFrameDetail()">Guardar Datos del Cuadro</button>
             </div>
         </div>
@@ -532,17 +554,31 @@
                 <h2 id="history-hive-title" style="color: var(--samsung-dark); margin-bottom: 10px;">Historial de la Colmena</h2>
                 
                 <div class="card" style="margin-top: 10px; padding: 15px;">
-                    <h4 style="margin-bottom:8px;">📈 Evolución Gráfica</h4>
-                    <label>Métrica a Analizar</label>
-                    <select id="chart-metric-select" onchange="updateHistoryChart()" style="margin-bottom:10px;">
-                        <option value="fuerza">Estado / Fuerza de la Colmena</option>
-                        <option value="alzas">Número de Alzas</option>
-                        <option value="cria">Cuadros con Cría (Total)</option>
-                        <option value="miel">Cuadros con Miel (Total)</option>
-                        <option value="inspeccionados">Cuadros Inspeccionados</option>
-                        <option value="renovar">Cuadros para Renovar / Viejos</option>
+                    <h4 style="margin-bottom:8px;">📈 Evolución Gráfica y Cuadros</h4>
+                    
+                    <label>Tipo de Análisis</label>
+                    <select id="chart-metric-select" onchange="onChartMetricChange()" style="margin-bottom:10px;">
+                        <optgroup label="General">
+                            <option value="fuerza">Fuerza de la Colmena</option>
+                            <option value="alzas">Número de Alzas</option>
+                            <option value="cria">Total Cuadros con Cría</option>
+                            <option value="miel">Total Cuadros con Miel</option>
+                        </optgroup>
+                        <optgroup label="Seguimiento por Cuadro Específico" id="chart-frame-optgroup">
+                            <!-- Se llena dinámicamente -->
+                        </optgroup>
                     </select>
-                    <div style="position: relative; height:180px; width:100%;">
+
+                    <div id="frame-metric-subselect-container" class="hidden">
+                        <label>Métrica del Cuadro Seleccionado</label>
+                        <select id="chart-frame-submetric" onchange="updateHistoryChart()" style="margin-bottom:10px;">
+                            <option value="cria">Estado de Cría</option>
+                            <option value="miel">Nivel de Miel</option>
+                            <option value="polen">Nivel de Polen</option>
+                        </select>
+                    </div>
+
+                    <div style="position: relative; height:200px; width:100%;">
                         <canvas id="evolutionChart"></canvas>
                     </div>
                 </div>
@@ -575,7 +611,7 @@
     </div>
 
     <script>
-        // --- INYECCIÓN DINÁMICA DE MANIFEST PWA (Para ocultar barra de Chrome) ---
+        // --- INYECCIÓN DINÁMICA DE MANIFEST PWA ---
         (function injectPWA() {
             const manifest = {
                 "name": "Colmenares Pro",
@@ -606,8 +642,8 @@
             dismissedAlerts: [],
             reminders: []
         };
-        let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, photoBase64: null };
-        let editingVisitId = null; // Controla si estamos editando o creando
+        let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, movements: {}, photoBase64: null };
+        let editingVisitId = null; 
         let currentFrameKey = null;
         let currentHistoryVisits = [];
         let chartInstance = null;
@@ -705,6 +741,15 @@
 
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
+        }
+
+        function getFrameLabel(key) {
+            if (key.startsWith('camara_')) return `C${key.split('_')[1]}`;
+            if (key.startsWith('alza')) {
+                const parts = key.split('_');
+                return `A${parts[0].replace('alza','')}-C${parts[1]}`;
+            }
+            return key;
         }
 
         function createHive() {
@@ -905,11 +950,11 @@
             document.getElementById('protein-no').classList.toggle('active', val === 'No');
         }
 
-        // --- 1. MODO NUEVA INSPECCIÓN ---
+        // --- MODO NUEVA INSPECCIÓN ---
         function openInspection(hiveIndex) {
-            editingVisitId = null; // Reiniciar variable de edición
+            editingVisitId = null;
             const hive = appData.hives[hiveIndex];
-            currentInspection = { hiveId: hive.hiveId, hiveIndex: hiveIndex, frames: {}, photoBase64: null };
+            currentInspection = { hiveId: hive.hiveId, hiveIndex: hiveIndex, frames: {}, movements: {}, photoBase64: null };
             
             document.getElementById('ins-hive-title').innerText = `Nueva Inspección: ${hive.hiveId}`;
             document.getElementById('ins-badge-label').innerText = "Información:";
@@ -926,7 +971,6 @@
                 document.getElementById('ins-prev-info').innerText = 'Sin visitas previas.';
             }
 
-            // Reseteo de campos vacíos
             document.getElementById('ins-force').value = 'Fuerte';
             document.getElementById('ins-behavior').value = 'Tranquila';
             document.getElementById('ins-feed-type').value = 'Ninguna';
@@ -941,35 +985,32 @@
             document.getElementById('inspection-modal').classList.remove('hidden');
         }
 
-        // --- 2. MODO EDITAR INSPECCIÓN EXISTENTE (MISMO FORMULARIO, FECHA INTACTA) ---
+        // --- MODO EDITAR INSPECCIÓN ---
         function editInspection(visitId) {
             const visit = appData.visits.find(v => v.visitId === visitId);
             if (!visit) return;
 
-            editingVisitId = visitId; // Marcamos el ID a editar
+            editingVisitId = visitId;
             const hiveIndex = appData.hives.findIndex(h => h.hiveId === visit.hiveId);
             
-            // Copiamos datos previos e imágenes
             currentInspection = { 
                 hiveId: visit.hiveId, 
                 hiveIndex: hiveIndex, 
                 frames: JSON.parse(JSON.stringify(visit.frameDetails || {})), 
+                movements: JSON.parse(JSON.stringify(visit.movements || {})),
                 photoBase64: visit.photo || null 
             };
 
-            // Cambiar textos visuales del modal
             document.getElementById('ins-hive-title').innerText = `Editar Inspección: ${visit.hiveId}`;
-            document.getElementById('ins-badge-label').innerText = "📅 Fecha Fija (No editable):";
+            document.getElementById('ins-badge-label').innerText = "📅 Fecha Fija:";
             document.getElementById('ins-prev-info').innerHTML = `<strong>${visit.date}</strong> (Sólo puedes cambiar contenidos)`;
             document.getElementById('photo-input-label').innerText = visit.photo ? "Cambiar Fotografía (Ya tiene una guardada)" : "Adjuntar Fotografía";
             document.getElementById('btn-save-inspection').innerText = "Actualizar Registro";
 
-            // Precargar el estado actual
             document.getElementById('ins-force').value = visit.force || 'Fuerte';
             document.getElementById('ins-alzas').value = visit.alzas || 0;
             document.getElementById('ins-behavior').value = visit.behavior || 'Tranquila';
 
-            // Parsear alimentación previa
             let feedType = 'Ninguna';
             let prop = '1:1';
             if (visit.feed) {
@@ -995,6 +1036,23 @@
             document.getElementById('inspection-modal').classList.remove('hidden');
         }
 
+        function getAllFrameKeys() {
+            const hive = appData.hives[currentInspection.hiveIndex];
+            if (!hive) return [];
+            const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
+            let keys = [];
+
+            for (let i = 1; i <= hive.frames.length; i++) {
+                keys.push(`camara_${i}`);
+            }
+            for (let a = 1; a <= numAlzas; a++) {
+                for (let i = 1; i <= 10; i++) {
+                    keys.push(`alza${a}_${i}`);
+                }
+            }
+            return keys;
+        }
+
         function renderInspectionFrames() {
             const hive = appData.hives[currentInspection.hiveIndex];
             if (!hive) return;
@@ -1004,16 +1062,18 @@
 
             // Cámara de cría
             const camaraDiv = document.createElement('div');
-            camaraDiv.innerHTML = `<h4 style="margin:10px 0 5px; font-size:14px; color:var(--samsung-blue);">Cámara de Cría (${hive.frames.length} Cuadros)</h4>`;
+            camaraDiv.innerHTML = `<h4 style="margin:10px 0 5px; font-size:14px; color:var(--samsung-blue);">Cámara de Cría / Núcleo (${hive.frames.length} Cuadros)</h4>`;
             const camaraGrid = document.createElement('div');
             camaraGrid.className = 'frames-grid';
             for (let i = 1; i <= hive.frames.length; i++) {
                 const key = `camara_${i}`;
                 const isInspected = !!currentInspection.frames[key];
+                const movementTag = currentInspection.movements[key] ? `<span class="tag-moved">🔄</span>` : '';
+                
                 const box = document.createElement('div');
                 box.className = `frame-box ${isInspected ? 'inspected' : ''}`;
                 box.id = `ui-frame-${key}`;
-                box.innerHTML = `C${i}`;
+                box.innerHTML = `C${i}${movementTag}`;
                 box.onclick = () => openFrameModal(key, `Cámara - Cuadro ${i}`);
                 camaraGrid.appendChild(box);
             }
@@ -1029,10 +1089,12 @@
                 for (let i = 1; i <= 10; i++) {
                     const key = `alza${a}_${i}`;
                     const isInspected = !!currentInspection.frames[key];
+                    const movementTag = currentInspection.movements[key] ? `<span class="tag-moved">🔄</span>` : '';
+
                     const box = document.createElement('div');
                     box.className = `frame-box ${isInspected ? 'inspected' : ''}`;
                     box.id = `ui-frame-${key}`;
-                    box.innerHTML = `A${a}-C${i}`;
+                    box.innerHTML = `A${a}-C${i}${movementTag}`;
                     box.onclick = () => openFrameModal(key, `Alza ${a} - Cuadro ${i}`);
                     alzaGrid.appendChild(box);
                 }
@@ -1069,8 +1131,72 @@
                 document.getElementById('frame-pollen').value = 'Nada';
             }
 
+            // Opciones de Mover
+            const swapSelect = document.getElementById('swap-target-select');
+            swapSelect.innerHTML = '';
+            const allKeys = getAllFrameKeys();
+            allKeys.forEach(k => {
+                if (k !== key) {
+                    const opt = document.createElement('option');
+                    opt.value = k;
+                    opt.innerText = getFrameLabel(k);
+                    swapSelect.appendChild(opt);
+                }
+            });
+
             toggleBroodQuality();
             document.getElementById('frame-modal').classList.remove('hidden');
+        }
+
+        function executeSwap() {
+            const targetKey = document.getElementById('swap-target-select').value;
+            if (!targetKey || targetKey === currentFrameKey) {
+                showSamsungToast("Selecciona una posición distinta");
+                return;
+            }
+
+            const frameA = currentInspection.frames[currentFrameKey] || { type: 'Cuadro de cera estampada', physical: 'Buen Estado', broodPresence: 'Sin cría', honeyAmount: 'Nada', pollen: 'Nada' };
+            const frameB = currentInspection.frames[targetKey] || { type: 'Cuadro de cera estampada', physical: 'Buen Estado', broodPresence: 'Sin cría', honeyAmount: 'Nada', pollen: 'Nada' };
+
+            currentInspection.frames[currentFrameKey] = frameB;
+            currentInspection.frames[targetKey] = frameA;
+
+            const labelA = getFrameLabel(currentFrameKey);
+            const labelB = getFrameLabel(targetKey);
+
+            if (!currentInspection.movements) currentInspection.movements = {};
+            currentInspection.movements[currentFrameKey] = `C(${labelB}) -> C(${labelA})`;
+            currentInspection.movements[targetKey] = `C(${labelA}) -> C(${labelB})`;
+
+            showSamsungToast(`Intercambiado ${labelA} ↔ ${labelB}`);
+            renderInspectionFrames();
+            closeModal('frame-modal');
+        }
+
+        function executeReplace() {
+            if (confirm(`¿Reemplazar ${getFrameLabel(currentFrameKey)} por un cuadro totalmente nuevo?`)) {
+                currentInspection.frames[currentFrameKey] = {
+                    type: 'Cuadro de cera estampada',
+                    physical: 'Buen Estado',
+                    broodPresence: 'Sin cría',
+                    broodQuality: null,
+                    honeyAmount: 'Nada',
+                    pollen: 'Nada'
+                };
+
+                if (!currentInspection.movements) currentInspection.movements = {};
+                currentInspection.movements[currentFrameKey] = 'C';
+
+                document.getElementById('frame-type').value = 'Cuadro de cera estampada';
+                document.getElementById('frame-physical').value = 'Buen Estado';
+                document.getElementById('frame-brood-presence').value = 'Sin cría';
+                document.getElementById('frame-honey-amount').value = 'Nada';
+                document.getElementById('frame-pollen').value = 'Nada';
+                toggleBroodQuality();
+
+                showSamsungToast("Cuadro reemplazado. Modifica sus datos si es necesario.");
+                saveFrameDetail();
+            }
         }
 
         function saveFrameDetail() {
@@ -1106,15 +1232,14 @@
                 const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
 
                 if (editingVisitId) {
-                    // --- MODO GUARDAR EDICIÓN (FECHA MANTENIDA INTEGRA) ---
                     const visitIndex = appData.visits.findIndex(v => v.visitId === editingVisitId);
                     if (visitIndex !== -1) {
-                        const originalDate = appData.visits[visitIndex].date; // CONSERVAR FECHA EXACTA
+                        const originalDate = appData.visits[visitIndex].date;
                         
                         appData.visits[visitIndex] = {
                             visitId: editingVisitId,
                             hiveId: currentInspection.hiveId,
-                            date: originalDate, // NO SE MODIFICA LA FECHA
+                            date: originalDate,
                             force: document.getElementById('ins-force').value,
                             alzas: numAlzas,
                             behavior: document.getElementById('ins-behavior').value,
@@ -1123,12 +1248,12 @@
                             treatment: treatmentText,
                             notes: document.getElementById('ins-notes').value,
                             photo: photoData !== null ? photoData : currentInspection.photoBase64,
-                            frameDetails: currentInspection.frames
+                            frameDetails: currentInspection.frames,
+                            movements: currentInspection.movements
                         };
                         showSamsungToast("Registro actualizado correctamente");
                     }
                 } else {
-                    // --- MODO REGISTRO NUEVO ---
                     const todayStr = new Date().toISOString().split('T')[0];
                     const visitData = {
                         visitId: generateID(),
@@ -1142,7 +1267,8 @@
                         treatment: treatmentText,
                         notes: document.getElementById('ins-notes').value,
                         photo: photoData,
-                        frameDetails: currentInspection.frames
+                        frameDetails: currentInspection.frames,
+                        movements: currentInspection.movements
                     };
 
                     appData.visits.push(visitData);
@@ -1178,7 +1304,7 @@
                     openHiveHistory(currentInspection.hiveId);
                 }
                 
-                editingVisitId = null; // Resetear
+                editingVisitId = null;
                 renderDashboard();
                 renderHives();
             };
@@ -1218,6 +1344,28 @@
             const listContainer = document.getElementById('history-list');
             listContainer.innerHTML = '';
 
+            const optGroup = document.getElementById('chart-frame-optgroup');
+            optGroup.innerHTML = '';
+
+            const hive = appData.hives.find(h => h.hiveId === hiveId);
+            const numFrames = hive ? hive.frames.length : 10;
+            const maxAlzas = Math.max(...currentHistoryVisits.map(v => v.alzas || 0), hive ? hive.alzas : 0);
+
+            for (let i = 1; i <= numFrames; i++) {
+                const opt = document.createElement('option');
+                opt.value = `frame_camara_${i}`;
+                opt.innerText = `Cuadro C${i} (Cámara)`;
+                optGroup.appendChild(opt);
+            }
+            for (let a = 1; a <= maxAlzas; a++) {
+                for (let i = 1; i <= 10; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = `frame_alza${a}_${i}`;
+                    opt.innerText = `Cuadro A${a}-C${i} (Alza ${a})`;
+                    optGroup.appendChild(opt);
+                }
+            }
+
             if (currentHistoryVisits.length === 0) {
                 listContainer.innerHTML = '<p style="font-size:13px; color:var(--samsung-secondary);">No hay inspecciones registradas.</p>';
             } else {
@@ -1238,62 +1386,102 @@
                 });
             }
 
-            updateHistoryChart();
+            onChartMetricChange();
             document.getElementById('history-modal').classList.remove('hidden');
+        }
+
+        function onChartMetricChange() {
+            const metric = document.getElementById('chart-metric-select').value;
+            const subContainer = document.getElementById('frame-metric-subselect-container');
+            if (metric.startsWith('frame_')) {
+                subContainer.classList.remove('hidden');
+            } else {
+                subContainer.classList.add('hidden');
+            }
+            updateHistoryChart();
+        }
+
+        function getBroodNumericValue(broodPresence, broodQuality) {
+            if (!broodPresence || broodPresence === 'Sin cría') return 0;
+            if (broodQuality === 'Escasa' || broodQuality === 'Irregular') return 1;
+            if (broodQuality === 'Media') return 2;
+            if (broodQuality === 'Abundante' || broodQuality === 'Compacta') return 3;
+            return 1.5;
+        }
+
+        function getAmountNumericValue(amountStr) {
+            if (amountStr === 'Nada' || !amountStr) return 0;
+            if (amountStr === 'Poca') return 1;
+            if (amountStr === 'Media') return 2;
+            if (amountStr === 'Mucha') return 3;
+            return 0;
         }
 
         function updateHistoryChart() {
             if (currentHistoryVisits.length === 0) return;
             
-            const metric = document.getElementById('chart-metric-select').value;
+            const metricSelect = document.getElementById('chart-metric-select').value;
             const ctx = document.getElementById('evolutionChart').getContext('2d');
             
             const labels = currentHistoryVisits.map(v => v.date);
             let dataPoints = [];
+            let annotations = []; 
             let labelText = '';
-            let minY = 0;
             let maxY = undefined;
 
-            switch (metric) {
-                case 'fuerza':
-                    labelText = 'Fuerza (1: Débil, 2: Media, 3: Fuerte)';
-                    const forceMap = { 'Débil': 1, 'Media': 2, 'Fuerte': 3 };
-                    dataPoints = currentHistoryVisits.map(v => forceMap[v.force] || 1);
-                    maxY = 4;
-                    break;
-                case 'alzas':
-                    labelText = 'Número de Alzas';
-                    dataPoints = currentHistoryVisits.map(v => v.alzas || 0);
-                    maxY = 4;
-                    break;
-                case 'cria':
-                    labelText = 'Cuadros con Cría';
-                    dataPoints = currentHistoryVisits.map(v => {
-                        if (!v.frameDetails) return 0;
-                        return Object.values(v.frameDetails).filter(f => f.broodPresence && f.broodPresence !== 'Sin cría').length;
-                    });
-                    break;
-                case 'miel':
-                    labelText = 'Cuadros con Miel';
-                    dataPoints = currentHistoryVisits.map(v => {
-                        if (!v.frameDetails) return 0;
-                        return Object.values(v.frameDetails).filter(f => f.honeyAmount && f.honeyAmount !== 'Nada').length;
-                    });
-                    break;
-                case 'inspeccionados':
-                    labelText = 'Total Cuadros Inspeccionados';
-                    dataPoints = currentHistoryVisits.map(v => {
-                        if (!v.frameDetails) return 0;
-                        return Object.keys(v.frameDetails).length;
-                    });
-                    break;
-                case 'renovar':
-                    labelText = 'Cuadros Viejos/Mal estado';
-                    dataPoints = currentHistoryVisits.map(v => {
-                        if (!v.frameDetails) return 0;
-                        return Object.values(v.frameDetails).filter(f => f.physical === 'Mal estado' || f.physical === 'Viejo').length;
-                    });
-                    break;
+            if (metricSelect.startsWith('frame_')) {
+                const frameKey = metricSelect.replace('frame_', '');
+                const subMetric = document.getElementById('chart-frame-submetric').value;
+                const frameLabel = getFrameLabel(frameKey);
+
+                labelText = `Cuadro ${frameLabel} - ${subMetric.toUpperCase()}`;
+                maxY = 3.5;
+
+                currentHistoryVisits.forEach(v => {
+                    const f = (v.frameDetails && v.frameDetails[frameKey]) ? v.frameDetails[frameKey] : null;
+                    const mov = (v.movements && v.movements[frameKey]) ? v.movements[frameKey] : null;
+
+                    annotations.push(mov); 
+
+                    if (!f) {
+                        dataPoints.push(0);
+                    } else if (subMetric === 'cria') {
+                        dataPoints.push(getBroodNumericValue(f.broodPresence, f.broodQuality));
+                    } else if (subMetric === 'miel') {
+                        dataPoints.push(getAmountNumericValue(f.honeyAmount));
+                    } else if (subMetric === 'polen') {
+                        dataPoints.push(getAmountNumericValue(f.pollen));
+                    }
+                });
+            } else {
+                switch (metricSelect) {
+                    case 'fuerza':
+                        labelText = 'Fuerza (1: Débil, 2: Media, 3: Fuerte)';
+                        const forceMap = { 'Débil': 1, 'Media': 2, 'Fuerte': 3 };
+                        dataPoints = currentHistoryVisits.map(v => forceMap[v.force] || 1);
+                        maxY = 4;
+                        break;
+                    case 'alzas':
+                        labelText = 'Número de Alzas';
+                        dataPoints = currentHistoryVisits.map(v => v.alzas || 0);
+                        maxY = 4;
+                        break;
+                    case 'cria':
+                        labelText = 'Total Cuadros con Cría';
+                        dataPoints = currentHistoryVisits.map(v => {
+                            if (!v.frameDetails) return 0;
+                            return Object.values(v.frameDetails).filter(f => f.broodPresence && f.broodPresence !== 'Sin cría').length;
+                        });
+                        break;
+                    case 'miel':
+                        labelText = 'Total Cuadros con Miel';
+                        dataPoints = currentHistoryVisits.map(v => {
+                            if (!v.frameDetails) return 0;
+                            return Object.values(v.frameDetails).filter(f => f.honeyAmount && f.honeyAmount !== 'Nada').length;
+                        });
+                        break;
+                }
+                annotations = currentHistoryVisits.map(() => null);
             }
 
             if (chartInstance) chartInstance.destroy();
@@ -1308,17 +1496,41 @@
                         borderColor: '#0072CE',
                         backgroundColor: 'rgba(0, 114, 206, 0.15)',
                         borderWidth: 2,
-                        pointBackgroundColor: '#0056A4',
-                        pointRadius: 4,
+                        pointBackgroundColor: annotations.map(a => a ? '#ED6C02' : '#0056A4'),
+                        pointRadius: annotations.map(a => a ? 7 : 4),
                         fill: true,
-                        tension: 0.3
+                        tension: 0.2
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                footer: function(tooltipItems) {
+                                    const index = tooltipItems[0].dataIndex;
+                                    const mov = annotations[index];
+                                    return mov ? `Cambio: ${mov}` : '';
+                                }
+                            }
+                        }
+                    },
                     scales: {
-                        y: { min: minY, max: maxY, ticks: { precision: 0 } }
+                        y: { 
+                            min: 0, 
+                            max: maxY, 
+                            ticks: { 
+                                precision: 0,
+                                callback: function(value) {
+                                    if (metricSelect.startsWith('frame_')) {
+                                        const levels = ['Sin Nada', 'Escaso/Poco', 'Medio', 'Abundante/Mucho'];
+                                        return levels[value] || value;
+                                    }
+                                    return value;
+                                }
+                            } 
+                        }
                     }
                 }
             });
@@ -1340,23 +1552,15 @@
 
                 Object.keys(visit.frameDetails).forEach(key => {
                     const f = visit.frameDetails[key];
-                    let label = key;
-                    if (key.startsWith('camara_')) {
-                        label = `C${key.split('_')[1]}`;
-                        groups['Cámara de Cría'].push({ label, f });
-                    } else if (key.startsWith('alza1_')) {
-                        label = `A1-C${key.split('_')[1]}`;
-                        groups['Alza 1'].push({ label, f });
-                    } else if (key.startsWith('alza2_')) {
-                        label = `A2-C${key.split('_')[1]}`;
-                        groups['Alza 2'].push({ label, f });
-                    } else if (key.startsWith('alza3_')) {
-                        label = `A3-C${key.split('_')[1]}`;
-                        groups['Alza 3'].push({ label, f });
-                    } else { 
-                        label = `C${key}`;
-                        groups['Cámara de Cría'].push({ label, f });
-                    }
+                    let label = getFrameLabel(key);
+                    const mov = (visit.movements && visit.movements[key]) ? `<br><strong style="color:var(--samsung-warning);">${visit.movements[key]}</strong>` : '';
+
+                    let groupName = 'Cámara de Cría';
+                    if (key.startsWith('alza1_')) groupName = 'Alza 1';
+                    else if (key.startsWith('alza2_')) groupName = 'Alza 2';
+                    else if (key.startsWith('alza3_')) groupName = 'Alza 3';
+
+                    groups[groupName].push({ label, f, mov });
                 });
 
                 Object.keys(groups).forEach(groupName => {
@@ -1373,7 +1577,7 @@
 
                             framesContent += `
                                 <div class="frame-box inspected" style="font-size:9px; min-height:70px; height:auto; padding:4px 2px; line-height:1.15; overflow:hidden;">
-                                    <strong>${item.label}</strong><br>${detailsHTML}
+                                    <strong>${item.label}</strong><br>${detailsHTML}${item.mov}
                                 </div>`;
                         });
                         framesContent += '</div>';
