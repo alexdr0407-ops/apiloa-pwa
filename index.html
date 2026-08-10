@@ -467,6 +467,10 @@
                     <span id="ins-prev-info" style="font-size: 13px;">Sin datos previos.</span>
                 </div>
 
+                <!-- 1. CAMPO FECHA PERSONALIZABLE -->
+                <label>Fecha de la Inspección</label>
+                <input type="date" id="ins-date-input">
+
                 <h3 style="margin-top: 15px; font-size: 16px;">1. Valoración General y Alzas</h3>
                 <label>Fuerza de la Colonia</label>
                 <select id="ins-force">
@@ -526,8 +530,15 @@
                 <button class="btn btn-info" style="margin-bottom: 10px;" onclick="startDictation()">🎤 Dictar Observación</button>
                 <textarea id="ins-notes" rows="3" placeholder="Observaciones escritas o dictadas..."></textarea>
                 
+                <!-- 2. OPCIÓN PARA ELEGIR DE GALERÍA O TOMAR FOTO CON CÁMARA -->
                 <label id="photo-input-label">Adjuntar Fotografía</label>
-                <input type="file" id="ins-photo-input" accept="image/*" capture="environment">
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <label style="font-size:11px; margin-top:2px;">📁 Elegir de la Galería:</label>
+                    <input type="file" id="ins-photo-gallery" accept="image/*">
+                    
+                    <label style="font-size:11px; margin-top:2px;">📷 Hacer una Foto con la Cámara:</label>
+                    <input type="file" id="ins-photo-camera" accept="image/*" capture="environment">
+                </div>
 
                 <button class="btn btn-success" id="btn-save-inspection" onclick="finishInspection()">Guardar Registro</button>
                 <button class="btn btn-danger" style="background: #888;" onclick="closeModal('inspection-modal')">Cancelar</button>
@@ -1102,6 +1113,9 @@
             document.getElementById('photo-input-label').innerText = "Adjuntar Fotografía";
             document.getElementById('btn-save-inspection').innerText = "Guardar Registro";
 
+            // Asignar fecha por defecto (hoy) al crear
+            document.getElementById('ins-date-input').value = new Date().toISOString().split('T')[0];
+
             // 3. Cargar datos generales anteriores (Alzas, Fuerza, Comportamiento) si existen
             document.getElementById('ins-alzas').value = lastVisit ? (lastVisit.alzas || 0) : (hive.alzas || 0);
             document.getElementById('ins-force').value = lastVisit ? lastVisit.force : 'Fuerte';
@@ -1120,7 +1134,8 @@
             setProtein('No');
             document.getElementById('ins-treatment').value = '';
             document.getElementById('ins-notes').value = '';
-            document.getElementById('ins-photo-input').value = '';
+            document.getElementById('ins-photo-gallery').value = '';
+            document.getElementById('ins-photo-camera').value = '';
 
             renderInspectionFrames();
 
@@ -1149,10 +1164,13 @@
             };
 
             document.getElementById('ins-hive-title').innerText = `Editar Inspección: ${visit.hiveId}`;
-            document.getElementById('ins-badge-label').innerText = "📅 Fecha Fija:";
-            document.getElementById('ins-prev-info').innerHTML = `<strong>${visit.date}</strong> (Modificando registro existente)`;
+            document.getElementById('ins-badge-label').innerText = "📅 Editar Registro:";
+            document.getElementById('ins-prev-info').innerHTML = `Modificando registro del <strong>${visit.date}</strong>`;
             document.getElementById('photo-input-label').innerText = visit.photo ? "Cambiar Fotografía (Ya tiene una guardada)" : "Adjuntar Fotografía";
             document.getElementById('btn-save-inspection').innerText = "Actualizar Registro";
+
+            // Asignar la fecha que tenía el registro para poder modificarla
+            document.getElementById('ins-date-input').value = visit.date || new Date().toISOString().split('T')[0];
 
             document.getElementById('ins-force').value = visit.force || 'Fuerte';
             document.getElementById('ins-alzas').value = visit.alzas || 0;
@@ -1175,7 +1193,8 @@
             setProtein(visit.protein || 'No');
             document.getElementById('ins-treatment').value = visit.treatment || '';
             document.getElementById('ins-notes').value = visit.notes || '';
-            document.getElementById('ins-photo-input').value = '';
+            document.getElementById('ins-photo-gallery').value = '';
+            document.getElementById('ins-photo-camera').value = '';
 
             renderInspectionFrames();
 
@@ -1415,10 +1434,29 @@
             closeModal('frame-modal');
         }
 
+        function updateHiveLastVisit(hiveId) {
+            const hiveObj = appData.hives.find(h => h.hiveId === hiveId);
+            if (!hiveObj) return;
+            const hiveVisits = appData.visits.filter(v => v.hiveId === hiveId);
+            if (hiveVisits.length > 0) {
+                const sorted = [...hiveVisits].sort((a,b) => new Date(b.date) - new Date(a.date));
+                hiveObj.lastVisit = sorted[0].date;
+            } else {
+                hiveObj.lastVisit = null;
+            }
+        }
+
         function finishInspection() {
             const hiveIndex = appData.hives.findIndex(h => h.hiveId === currentInspection.hiveId);
-            const fileInput = document.getElementById('ins-photo-input');
+            const fileGallery = document.getElementById('ins-photo-gallery');
+            const fileCamera = document.getElementById('ins-photo-camera');
             const treatmentText = document.getElementById('ins-treatment').value.trim();
+
+            // Usar el archivo adjuntado (Prioridad: Galería o Cámara)
+            const selectedFile = (fileGallery.files && fileGallery.files[0]) ? fileGallery.files[0] : ((fileCamera.files && fileCamera.files[0]) ? fileCamera.files[0] : null);
+
+            const chosenDateInput = document.getElementById('ins-date-input').value;
+            const selectedDate = chosenDateInput ? chosenDateInput : new Date().toISOString().split('T')[0];
 
             const feedType = document.getElementById('ins-feed-type').value;
             let finalFeedText = feedType;
@@ -1432,12 +1470,10 @@
                 if (editingVisitId) {
                     const visitIndex = appData.visits.findIndex(v => v.visitId === editingVisitId);
                     if (visitIndex !== -1) {
-                        const originalDate = appData.visits[visitIndex].date;
-                        
                         appData.visits[visitIndex] = {
                             visitId: editingVisitId,
                             hiveId: currentInspection.hiveId,
-                            date: originalDate,
+                            date: selectedDate,
                             force: document.getElementById('ins-force').value,
                             alzas: numAlzas,
                             behavior: document.getElementById('ins-behavior').value,
@@ -1452,11 +1488,10 @@
                         showSamsungToast("Registro actualizado correctamente");
                     }
                 } else {
-                    const todayStr = new Date().toISOString().split('T')[0];
                     const visitData = {
                         visitId: generateID(),
                         hiveId: currentInspection.hiveId,
-                        date: todayStr,
+                        date: selectedDate,
                         force: document.getElementById('ins-force').value,
                         alzas: numAlzas,
                         behavior: document.getElementById('ins-behavior').value,
@@ -1470,9 +1505,10 @@
                     };
 
                     appData.visits.push(visitData);
-                    appData.hives[hiveIndex].lastVisit = todayStr;
                     showSamsungToast("Inspección guardada");
                 }
+
+                updateHiveLastVisit(currentInspection.hiveId);
 
                 if (treatmentText !== '' && !editingVisitId) {
                     const weeksInput = prompt(`Tratamiento: "${treatmentText}"\n¿Programar aviso en cuántas SEMANAS?`, "2");
@@ -1507,10 +1543,10 @@
                 renderHives();
             };
 
-            if (fileInput.files && fileInput.files[0]) {
+            if (selectedFile) {
                 const reader = new FileReader();
                 reader.onload = function(e) { completeSave(e.target.result); };
-                reader.readAsDataURL(fileInput.files[0]);
+                reader.readAsDataURL(selectedFile);
             } else {
                 completeSave(null);
             }
