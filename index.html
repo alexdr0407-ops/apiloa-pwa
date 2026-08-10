@@ -265,6 +265,12 @@
             z-index: 1000; 
             transition: all 0.3s ease;
         }
+
+        /* Prioridad de capas: La ventana de edición y detalle de cuadro saldrán por delante del historial */
+        #inspection-modal, #frame-modal {
+            z-index: 1100;
+        }
+
         .modal-content { 
             background: white; 
             padding: 24px; 
