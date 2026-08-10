@@ -146,6 +146,34 @@
             border-color: var(--samsung-blue);
         }
 
+        /* Botones de Porcentaje para Cría Operculada */
+        .pct-btn-group {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .btn-pct {
+            flex: 1;
+            min-width: 70px;
+            padding: 10px 4px;
+            border: 1.5px solid #E0E0E0;
+            background-color: #FAFAFA;
+            color: var(--samsung-dark);
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        .btn-pct.active {
+            background-color: var(--samsung-blue);
+            color: white;
+            border-color: var(--samsung-blue);
+            box-shadow: 0 2px 6px rgba(0, 114, 206, 0.3);
+        }
+
         nav { 
             position: fixed; 
             bottom: calc(15px + env(safe-area-inset-bottom, 0px)); 
@@ -283,6 +311,7 @@
             animation: slideUp 0.3s ease-out;
             box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
             padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+            position: relative;
         }
 
         @keyframes slideUp {
@@ -296,6 +325,30 @@
             background: #E0E0E0;
             border-radius: 10px;
             margin: 0 auto 15px auto;
+        }
+
+        /* Botón de Cierre (X) rápido para modales */
+        .modal-close-x {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            background: #F0F4F8;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--samsung-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .modal-close-x:active {
+            background: #E0E0E0;
+            color: var(--samsung-dark);
         }
 
         #samsung-toast {
@@ -402,9 +455,12 @@
 
         <!-- MODAL DE INSPECCIÓN (CREAR / EDITAR) -->
         <div id="inspection-modal" class="modal hidden">
-            <div class="modal-content">
+            <div class="modal-content" id="inspection-modal-content">
                 <div class="modal-handle"></div>
-                <h2 id="ins-hive-title" style="margin-bottom: 10px; color: var(--samsung-dark);">Inspección</h2>
+                <!-- Botón 'X' para cerrar modal de inspección -->
+                <button type="button" class="modal-close-x" onclick="closeModal('inspection-modal')">✕</button>
+
+                <h2 id="ins-hive-title" style="margin-bottom: 10px; color: var(--samsung-dark); padding-right: 35px;">Inspección</h2>
                 
                 <div id="ins-prev-badge" class="card" style="background: var(--samsung-soft-blue); padding: 12px 16px; margin-bottom: 15px;">
                     <strong style="color: var(--samsung-blue);" id="ins-badge-label">Información:</strong> 
@@ -482,7 +538,10 @@
         <div id="frame-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-handle"></div>
-                <h3 id="frame-modal-title" style="margin-bottom: 15px;">Detalle del Cuadro</h3>
+                <!-- 2. BOTÓN "X" PARA CERRAR/CANCELAR SI TE CONFUNDES AL PINCHAR EN UN CUADRO -->
+                <button type="button" class="modal-close-x" onclick="closeModal('frame-modal')">✕</button>
+
+                <h3 id="frame-modal-title" style="margin-bottom: 15px; padding-right: 35px;">Detalle del Cuadro</h3>
                 
                 <label>Tipo de Cuadro</label>
                 <select id="frame-type">
@@ -510,14 +569,29 @@
                 </select>
 
                 <div id="frame-brood-quality-container" class="hidden">
-                    <label>Cantidad de Cría</label>
-                    <select id="frame-brood-quality">
-                        <option value="Escasa">Escasa</option>
-                        <option value="Media">Media</option>
-                        <option value="Abundante">Abundante</option>
-                        <option value="Compacta">Compacta</option>
-                        <option value="Irregular">Irregular</option>
-                    </select>
+                    <!-- 3. SI LA CRÍA ES OPERCULADA, BOTONES DE PORCENTAJE (0-25%, 25-50%, 50-75%, 75-100%) -->
+                    <div id="brood-pct-section" class="hidden">
+                        <label>Porcentaje de Cría Operculada</label>
+                        <input type="hidden" id="frame-brood-pct-val" value="">
+                        <div class="pct-btn-group">
+                            <button type="button" class="btn-pct" onclick="selectPercentage(this, '0-25%')">0-25%</button>
+                            <button type="button" class="btn-pct" onclick="selectPercentage(this, '25-50%')">25-50%</button>
+                            <button type="button" class="btn-pct" onclick="selectPercentage(this, '50-75%')">50-75%</button>
+                            <button type="button" class="btn-pct" onclick="selectPercentage(this, '75-100%')">75-100%</button>
+                        </div>
+                    </div>
+
+                    <!-- SELECTOR HABITUAL PARA OTROS TIPOS DE CRÍA -->
+                    <div id="brood-select-section">
+                        <label>Cantidad / Calidad de Cría</label>
+                        <select id="frame-brood-quality">
+                            <option value="Escasa">Escasa</option>
+                            <option value="Media">Media</option>
+                            <option value="Abundante">Abundante</option>
+                            <option value="Compacta">Compacta</option>
+                            <option value="Irregular">Irregular</option>
+                        </select>
+                    </div>
                 </div>
 
                 <label>Miel</label>
@@ -557,7 +631,9 @@
         <div id="history-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-handle"></div>
-                <h2 id="history-hive-title" style="color: var(--samsung-dark); margin-bottom: 10px;">Historial de la Colmena</h2>
+                <button type="button" class="modal-close-x" onclick="closeModal('history-modal')">✕</button>
+
+                <h2 id="history-hive-title" style="color: var(--samsung-dark); margin-bottom: 10px; padding-right: 35px;">Historial de la Colmena</h2>
                 
                 <button class="btn btn-warning" style="margin-bottom: 15px;" onclick="openCompareModal()">⚔️ Comparar Cuadros (3 Visitas)</button>
 
@@ -610,11 +686,13 @@
             </div>
         </div>
 
-        <!-- MODAL COMPARADOR DE FICHAS DE CUADROS (ACTUALIZADO A 3 VISITAS) -->
+        <!-- MODAL COMPARADOR DE FICHAS DE CUADROS -->
         <div id="compare-modal" class="modal hidden">
             <div class="modal-content" style="max-width: 550px;">
                 <div class="modal-handle"></div>
-                <h2 id="compare-hive-title" style="color: var(--samsung-dark); margin-bottom: 10px;">Comparar Cuadros</h2>
+                <button type="button" class="modal-close-x" onclick="closeModal('compare-modal')">✕</button>
+
+                <h2 id="compare-hive-title" style="color: var(--samsung-dark); margin-bottom: 10px; padding-right: 35px;">Comparar Cuadros</h2>
                 
                 <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
                     <div style="flex:1; min-width: 130px;">
@@ -641,7 +719,9 @@
         <div id="visit-detail-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-handle"></div>
-                <h3 id="visit-detail-title" style="margin-bottom: 15px;">Detalle de Inspección</h3>
+                <button type="button" class="modal-close-x" onclick="closeModal('visit-detail-modal')">✕</button>
+
+                <h3 id="visit-detail-title" style="margin-bottom: 15px; padding-right: 35px;">Detalle de Inspección</h3>
                 <div id="visit-detail-body"></div>
                 
                 <button class="btn btn-primary" id="btn-edit-from-detail" style="margin-top: 15px;">✏️ Editar Registro</button>
@@ -1043,7 +1123,13 @@
             document.getElementById('ins-photo-input').value = '';
 
             renderInspectionFrames();
-            document.getElementById('inspection-modal').classList.remove('hidden');
+
+            // 1. DESPLAZAMIENTO A LA PARTE SUPERIOR (MODAL SCROLL TOP)
+            const modalEl = document.getElementById('inspection-modal');
+            modalEl.classList.remove('hidden');
+            const contentEl = document.getElementById('inspection-modal-content');
+            if (contentEl) contentEl.scrollTop = 0;
+            window.scrollTo(0, 0);
         }
 
         // --- MODO EDITAR INSPECCIÓN ---
@@ -1094,7 +1180,13 @@
             renderInspectionFrames();
 
             closeModal('visit-detail-modal');
-            document.getElementById('inspection-modal').classList.remove('hidden');
+
+            // 1. DESPLAZAMIENTO A LA PARTE SUPERIOR (MODAL SCROLL TOP)
+            const modalEl = document.getElementById('inspection-modal');
+            modalEl.classList.remove('hidden');
+            const contentEl = document.getElementById('inspection-modal-content');
+            if (contentEl) contentEl.scrollTop = 0;
+            window.scrollTo(0, 0);
         }
 
         function getAllFrameKeys() {
@@ -1164,23 +1256,59 @@
             }
         }
 
+        // 3. ALTERNAR SELECTOR O BOTONES DE PORCENTAJE SEGÚN CRÍA OPERCULADA
         function toggleBroodQuality() {
             const val = document.getElementById('frame-brood-presence').value;
             const container = document.getElementById('frame-brood-quality-container');
-            if (val !== 'Sin cría') container.classList.remove('hidden');
-            else container.classList.add('hidden');
+            const pctSection = document.getElementById('brood-pct-section');
+            const selectSection = document.getElementById('brood-select-section');
+
+            if (val !== 'Sin cría') {
+                container.classList.remove('hidden');
+                if (val === 'Cría operculada') {
+                    pctSection.classList.remove('hidden');
+                    selectSection.classList.add('hidden');
+                } else {
+                    pctSection.classList.add('hidden');
+                    selectSection.classList.remove('hidden');
+                }
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        // 3. SELECCIONAR BOTÓN DE PORCENTAJE
+        function selectPercentage(btnEl, pctValue) {
+            const group = btnEl.parentElement;
+            group.querySelectorAll('.btn-pct').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            document.getElementById('frame-brood-pct-val').value = pctValue;
         }
 
         function openFrameModal(key, displayName) {
             currentFrameKey = key;
             document.getElementById('frame-modal-title').innerText = displayName;
             
+            // Limpiar estados de porcentaje
+            document.querySelectorAll('.btn-pct').forEach(b => b.classList.remove('active'));
+            document.getElementById('frame-brood-pct-val').value = '';
+
             const existing = currentInspection.frames[key];
             if (existing) {
                 document.getElementById('frame-type').value = existing.type || 'Cuadro de cera estampada';
                 document.getElementById('frame-physical').value = existing.physical || 'Buen Estado';
                 document.getElementById('frame-brood-presence').value = existing.broodPresence || 'Sin cría';
-                document.getElementById('frame-brood-quality').value = existing.broodQuality || 'Media';
+                
+                if (existing.broodPresence === 'Cría operculada' && existing.broodQuality) {
+                    const pctVal = existing.broodQuality;
+                    document.getElementById('frame-brood-pct-val').value = pctVal;
+                    document.querySelectorAll('.btn-pct').forEach(b => {
+                        if (b.innerText === pctVal) b.classList.add('active');
+                    });
+                } else {
+                    document.getElementById('frame-brood-quality').value = existing.broodQuality || 'Media';
+                }
+
                 document.getElementById('frame-honey-amount').value = existing.honeyAmount || 'Nada';
                 document.getElementById('frame-pollen').value = existing.pollen || 'Nada';
             } else {
@@ -1264,11 +1392,20 @@
             if (!currentFrameKey) return;
             const broodPresence = document.getElementById('frame-brood-presence').value;
 
+            let broodQualityValue = null;
+            if (broodPresence !== 'Sin cría') {
+                if (broodPresence === 'Cría operculada') {
+                    broodQualityValue = document.getElementById('frame-brood-pct-val').value || '0-25%';
+                } else {
+                    broodQualityValue = document.getElementById('frame-brood-quality').value;
+                }
+            }
+
             currentInspection.frames[currentFrameKey] = {
                 type: document.getElementById('frame-type').value,
                 physical: document.getElementById('frame-physical').value,
                 broodPresence: broodPresence,
-                broodQuality: broodPresence !== 'Sin cría' ? document.getElementById('frame-brood-quality').value : null,
+                broodQuality: broodQualityValue,
                 honeyAmount: document.getElementById('frame-honey-amount').value,
                 pollen: document.getElementById('frame-pollen').value
             };
@@ -1508,9 +1645,10 @@
 
         function getBroodNumericValue(broodPresence, broodQuality) {
             if (!broodPresence || broodPresence === 'Sin cría') return 0;
-            if (broodQuality === 'Escasa' || broodQuality === 'Irregular') return 1;
-            if (broodQuality === 'Media') return 2;
-            if (broodQuality === 'Abundante' || broodQuality === 'Compacta') return 3;
+            if (broodQuality === '0-25%' || broodQuality === 'Escasa' || broodQuality === 'Irregular') return 1;
+            if (broodQuality === '25-50%' || broodQuality === 'Media') return 2;
+            if (broodQuality === '50-75%' || broodQuality === 'Abundante') return 2.5;
+            if (broodQuality === '75-100%' || broodQuality === 'Compacta') return 3;
             return 1.5;
         }
 
@@ -1645,7 +1783,7 @@
             });
         }
 
-        // --- FUNCIONES DEL COMPARADOR DE FICHAS DE CUADROS (ACTUALIZADO A 3 VISITAS) ---
+        // --- FUNCIONES DEL COMPARADOR DE FICHAS DE CUADROS ---
         function openCompareModal() {
             if (currentHistoryVisits.length < 1) {
                 showSamsungToast("No hay registros para comparar");
@@ -1681,7 +1819,6 @@
                 selectC.appendChild(optC);
             });
 
-            // Selección predeterminada inteligente para tres visitas
             selectA.selectedIndex = 0; 
             if (reversedVisits.length >= 3) {
                 selectB.selectedIndex = 1;
@@ -1727,7 +1864,7 @@
                         const f = item.f;
                         let detailsHTML = '';
                         if (f.type) detailsHTML += `<span style="color:var(--samsung-blue); font-weight:bold;">${f.type.replace('Cuadro de ','')}</span><br>`;
-                        if (f.broodPresence && f.broodPresence !== 'Sin cría') detailsHTML += `Cría: ${f.broodPresence}<br>`;
+                        if (f.broodPresence && f.broodPresence !== 'Sin cría') detailsHTML += `Cría: ${f.broodPresence} (${f.broodQuality || ''})<br>`;
                         if (f.honeyAmount && f.honeyAmount !== 'Nada') detailsHTML += `Miel: ${f.honeyAmount}<br>`;
                         if (f.pollen && f.pollen !== 'Nada') detailsHTML += `Polen: ${f.pollen}<br>`;
 
