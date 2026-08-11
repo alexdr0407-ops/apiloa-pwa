@@ -296,8 +296,12 @@
             transition: all 0.3s ease;
         }
 
-        #inspection-modal, #frame-modal {
+        #inspection-modal, #frame-modal, #cata-modal {
             z-index: 1100;
+        }
+        
+        #cata-modal {
+            z-index: 1200;
         }
 
         .modal-content { 
@@ -459,7 +463,10 @@
                 <div class="modal-handle"></div>
                 <button type="button" class="modal-close-x" onclick="closeModal('inspection-modal')">✕</button>
 
-                <h2 id="ins-hive-title" style="margin-bottom: 10px; color: var(--samsung-dark); padding-right: 35px;">Inspección</h2>
+                <!-- Botón Cata de Miel añadido arriba a la derecha -->
+                <button type="button" class="btn btn-warning" id="btn-cata-miel" style="position: absolute; top: 14px; right: 60px; width: auto; margin-top: 0; padding: 8px 14px; font-size: 13px; border-radius: 14px;" onclick="openCataModal()">Cata de Miel</button>
+
+                <h2 id="ins-hive-title" style="margin-bottom: 10px; color: var(--samsung-dark); padding-right: 140px;">Inspección</h2>
                 
                 <div id="ins-prev-badge" class="card" style="background: var(--samsung-soft-blue); padding: 12px 16px; margin-bottom: 15px;">
                     <strong style="color: var(--samsung-blue);" id="ins-badge-label">Información:</strong> 
@@ -542,6 +549,20 @@
             </div>
         </div>
 
+        <!-- MODAL CATA DE MIEL -->
+        <div id="cata-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-handle"></div>
+                <button type="button" class="modal-close-x" onclick="closeModal('cata-modal')">✕</button>
+                <h2 style="margin-bottom: 10px; color: var(--samsung-dark);">Cata de Miel</h2>
+                <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:15px;">Selecciona los cuadros cosechados para transformarlos en <strong>Cuadros de cera estirada</strong> para el siguiente registro:</p>
+                
+                <div id="cata-frames-container"></div>
+                
+                <button class="btn btn-primary" style="margin-top: 20px;" onclick="closeModal('cata-modal')">Aceptar y Volver</button>
+            </div>
+        </div>
+
         <!-- MODAL DETALLE Y GESTIÓN DE CUADRO -->
         <div id="frame-modal" class="modal hidden">
             <div class="modal-content">
@@ -609,7 +630,6 @@
                     <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, '75-100%')">75-100%</button>
                 </div>
 
-                <!-- NUEVO CAMBIO SOLICITADO: PORCENTAJES DE POLEN EN RANGOS -->
                 <label>Polen</label>
                 <input type="hidden" id="frame-pollen" value="Nada">
                 <div class="pct-btn-group" id="pollen-pct-section">
@@ -1145,7 +1165,6 @@
             editingVisitId = visitId;
             const hiveIndex = appData.hives.findIndex(h => h.hiveId === visit.hiveId);
             
-            // Si venía de una estructura antigua con un solo string en 'photo', lo convertimos a array
             let existingPhotos = [];
             if (visit.photos && Array.isArray(visit.photos)) {
                 existingPhotos = JSON.parse(JSON.stringify(visit.photos));
@@ -1188,7 +1207,7 @@
             setFeedProportion(prop);
 
             setProtein(visit.protein || 'No');
-            document.getElementById('ins-treatment').value = visit.treatment || '';
+            document.getElementById('ins-treatment').value = '';
             document.getElementById('ins-notes').value = visit.notes || '';
             document.getElementById('ins-photo-gallery').value = '';
             document.getElementById('ins-photo-camera').value = '';
@@ -1295,6 +1314,48 @@
             }
         }
 
+        // --- FUNCIONALIDAD DE VENTANA CATA DE MIEL ---
+        function openCataModal() {
+            const container = document.getElementById('cata-frames-container');
+            container.innerHTML = '';
+            
+            const allKeys = getAllFrameKeys();
+            let hasFrames = false;
+
+            const grid = document.createElement('div');
+            grid.className = 'frames-grid';
+
+            allKeys.forEach(key => {
+                const f = currentInspection.frames[key];
+                if (f) {
+                    hasFrames = true;
+                    const box = document.createElement('div');
+                    box.className = 'frame-box inspected';
+                    
+                    let ceraLabel = (f.type === 'Cuadro estirado') ? 'Estirado 🍯' : (f.type ? f.type.replace('Cuadro de ', '') : 'Cuadro');
+                    box.innerHTML = `<strong>${getFrameLabel(key)}</strong><br><span style="font-size:9px; font-weight:normal;">${ceraLabel}</span>`;
+                    
+                    box.onclick = () => {
+                        f.type = "Cuadro estirado";
+                        f.honeyAmount = "Nada";
+                        f.pollen = "Nada";
+                        box.querySelector('span').innerText = 'Estirado 🍯';
+                        showSamsungToast(`Cuadro ${getFrameLabel(key)} configurado como cera estirada`);
+                        renderInspectionFrames();
+                    };
+                    grid.appendChild(box);
+                }
+            });
+
+            if (!hasFrames) {
+                container.innerHTML = '<p style="font-size:13px; color:var(--samsung-secondary); text-align:center; padding:20px 0;">No hay cuadros cargados del registro anterior en esta inspección.</p>';
+            } else {
+                container.appendChild(grid);
+            }
+
+            document.getElementById('cata-modal').classList.remove('hidden');
+        }
+
         function toggleBroodQuality() {
             const val = document.getElementById('frame-brood-presence').value;
             const container = document.getElementById('frame-brood-quality-container');
@@ -1329,7 +1390,6 @@
             document.getElementById('frame-honey-amount').value = honeyValue;
         }
 
-        // CONTROLADOR DE LOS NUEVOS BOTONES DE PORCENTAJE DE POLEN
         function selectPollenPercentage(btnEl, pollenValue) {
             const group = btnEl.parentElement;
             group.querySelectorAll('.pollen-btn-pct').forEach(b => b.classList.remove('active'));
@@ -1372,7 +1432,6 @@
                     if (b.innerText === honeyVal) b.classList.add('active');
                 });
 
-                // Cargar Polen guardado en porcentaje
                 const pollenVal = existing.pollen || 'Nada';
                 document.getElementById('frame-pollen').value = pollenVal;
                 document.querySelectorAll('.pollen-btn-pct').forEach(b => {
@@ -1512,12 +1571,10 @@
             const fileCamera = document.getElementById('ins-photo-camera');
             const treatmentText = document.getElementById('ins-treatment').value.trim();
 
-            // Combinamos las listas de archivos seleccionados de ambos inputs
             let filesArray = [];
             if (fileGallery.files) filesArray = filesArray.concat(Array.from(fileGallery.files));
             if (fileCamera.files) filesArray = filesArray.concat(Array.from(fileCamera.files));
 
-            // Validamos que no superen el máximo de 3 imágenes
             if (filesArray.length > 3) {
                 showSamsungToast("⚠️ Error: Solo puedes subir un máximo de 3 fotos.");
                 fileGallery.value = '';
@@ -1536,8 +1593,6 @@
 
             const completeSave = (photosDataArray) => {
                 const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
-                
-                // Si el usuario no subió fotos nuevas, conservamos las que ya estaban asignadas
                 let finalPhotos = photosDataArray.length > 0 ? photosDataArray : (currentInspection.photosBase64 || []);
 
                 if (editingVisitId) {
@@ -1616,7 +1671,6 @@
                 renderHives();
             };
 
-            // Procesar múltiples archivos con Promesas en paralelo si existen
             if (filesArray.length > 0) {
                 let readers = filesArray.map(file => {
                     return new Promise((resolve) => {
@@ -2044,7 +2098,6 @@
 
             let framesContent = renderFramesGridForComparison(visit);
 
-            // Obtener las fotos guardadas mapeando la compatibilidad con el formato anterior
             let photosHTML = '';
             let currentPhotos = [];
             if (visit.photos && Array.isArray(visit.photos)) {
