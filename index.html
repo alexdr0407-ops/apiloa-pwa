@@ -528,13 +528,13 @@
                 <button class="btn btn-info" style="margin-bottom: 10px;" onclick="startDictation()">🎤 Dictar Observación</button>
                 <textarea id="ins-notes" rows="3" placeholder="Observaciones escritas o dictadas..."></textarea>
                 
-                <label id="photo-input-label">Adjuntar Fotografía</label>
+                <label id="photo-input-label">Adjuntar Fotografías (Máx 3)</label>
                 <div style="display:flex; flex-direction:column; gap:6px;">
-                    <label style="font-size:11px; margin-top:2px;">📁 Elegir de la Galería:</label>
-                    <input type="file" id="ins-photo-gallery" accept="image/*">
+                    <label style="font-size:11px; margin-top:2px;">📁 Elegir de la Galería (Puedes seleccionar hasta 3):</label>
+                    <input type="file" id="ins-photo-gallery" accept="image/*" multiple>
                     
-                    <label style="font-size:11px; margin-top:2px;">📷 Hacer una Foto con la Cámara:</label>
-                    <input type="file" id="ins-photo-camera" accept="image/*" capture="environment">
+                    <label style="font-size:11px; margin-top:2px;">📷 Hacer Fotos con la Cámara:</label>
+                    <input type="file" id="ins-photo-camera" accept="image/*" capture="environment" multiple>
                 </div>
 
                 <button class="btn btn-success" id="btn-save-inspection" onclick="finishInspection()">Guardar Registro</button>
@@ -778,7 +778,7 @@
             dismissedAlerts: [],
             reminders: []
         };
-        let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, movements: {}, photoBase64: null };
+        let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, movements: {}, photosBase64: [] };
         let editingVisitId = null; 
         let currentFrameKey = null;
         let currentHistoryVisits = [];
@@ -1100,12 +1100,12 @@
                 hiveIndex: hiveIndex, 
                 frames: copiedFrames, 
                 movements: {}, 
-                photoBase64: null 
+                photosBase64: [] 
             };
             
             document.getElementById('ins-hive-title').innerText = `Nueva Inspección: ${hive.hiveId}`;
             document.getElementById('ins-badge-label').innerText = "Información:";
-            document.getElementById('photo-input-label').innerText = "Adjuntar Fotografía";
+            document.getElementById('photo-input-label').innerText = "Adjuntar Fotografías (Máx 3)";
             document.getElementById('btn-save-inspection').innerText = "Guardar Registro";
 
             document.getElementById('ins-date-input').value = new Date().toISOString().split('T')[0];
@@ -1145,18 +1145,26 @@
             editingVisitId = visitId;
             const hiveIndex = appData.hives.findIndex(h => h.hiveId === visit.hiveId);
             
+            // Si venía de una estructura antigua con un solo string en 'photo', lo convertimos a array
+            let existingPhotos = [];
+            if (visit.photos && Array.isArray(visit.photos)) {
+                existingPhotos = JSON.parse(JSON.stringify(visit.photos));
+            } else if (visit.photo) {
+                existingPhotos = [visit.photo];
+            }
+
             currentInspection = { 
                 hiveId: visit.hiveId, 
                 hiveIndex: hiveIndex, 
                 frames: JSON.parse(JSON.stringify(visit.frameDetails || {})), 
                 movements: JSON.parse(JSON.stringify(visit.movements || {})),
-                photoBase64: visit.photo || null 
+                photosBase64: existingPhotos 
             };
 
             document.getElementById('ins-hive-title').innerText = `Editar Inspección: ${visit.hiveId}`;
             document.getElementById('ins-badge-label').innerText = "📅 Editar Registro:";
             document.getElementById('ins-prev-info').innerHTML = `Modificando registro del <strong>${visit.date}</strong>`;
-            document.getElementById('photo-input-label').innerText = visit.photo ? "Cambiar Fotografía (Ya tiene una guardada)" : "Adjuntar Fotografía";
+            document.getElementById('photo-input-label').innerText = existingPhotos.length > 0 ? `Cambiar Fotografías (${existingPhotos.length} guardadas)` : "Adjuntar Fotografías (Máx 3)";
             document.getElementById('btn-save-inspection').innerText = "Actualizar Registro";
 
             document.getElementById('ins-date-input').value = visit.date || new Date().toISOString().split('T')[0];
@@ -1504,7 +1512,18 @@
             const fileCamera = document.getElementById('ins-photo-camera');
             const treatmentText = document.getElementById('ins-treatment').value.trim();
 
-            const selectedFile = (fileGallery.files && fileGallery.files[0]) ? fileGallery.files[0] : ((fileCamera.files && fileCamera.files[0]) ? fileCamera.files[0] : null);
+            // Combinamos las listas de archivos seleccionados de ambos inputs
+            let filesArray = [];
+            if (fileGallery.files) filesArray = filesArray.concat(Array.from(fileGallery.files));
+            if (fileCamera.files) filesArray = filesArray.concat(Array.from(fileCamera.files));
+
+            // Validamos que no superen el máximo de 3 imágenes
+            if (filesArray.length > 3) {
+                showSamsungToast("⚠️ Error: Solo puedes subir un máximo de 3 fotos.");
+                fileGallery.value = '';
+                fileCamera.value = '';
+                return;
+            }
 
             const chosenDateInput = document.getElementById('ins-date-input').value;
             const selectedDate = chosenDateInput ? chosenDateInput : new Date().toISOString().split('T')[0];
@@ -1515,8 +1534,11 @@
                 finalFeedText += ` (Jarabe ${selectedFeedProportion})`;
             }
 
-            const completeSave = (photoData) => {
+            const completeSave = (photosDataArray) => {
                 const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
+                
+                // Si el usuario no subió fotos nuevas, conservamos las que ya estaban asignadas
+                let finalPhotos = photosDataArray.length > 0 ? photosDataArray : (currentInspection.photosBase64 || []);
 
                 if (editingVisitId) {
                     const visitIndex = appData.visits.findIndex(v => v.visitId === editingVisitId);
@@ -1532,7 +1554,7 @@
                             protein: selectedProtein,
                             treatment: treatmentText,
                             notes: document.getElementById('ins-notes').value,
-                            photo: photoData !== null ? photoData : currentInspection.photoBase64,
+                            photos: finalPhotos,
                             frameDetails: currentInspection.frames,
                             movements: currentInspection.movements
                         };
@@ -1550,7 +1572,7 @@
                         protein: selectedProtein,
                         treatment: treatmentText,
                         notes: document.getElementById('ins-notes').value,
-                        photo: photoData,
+                        photos: finalPhotos,
                         frameDetails: currentInspection.frames,
                         movements: currentInspection.movements
                     };
@@ -1594,12 +1616,21 @@
                 renderHives();
             };
 
-            if (selectedFile) {
-                const reader = new FileReader();
-                reader.onload = function(e) { completeSave(e.target.result); };
-                reader.readAsDataURL(selectedFile);
+            // Procesar múltiples archivos con Promesas en paralelo si existen
+            if (filesArray.length > 0) {
+                let readers = filesArray.map(file => {
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) { resolve(e.target.result); };
+                        reader.readAsDataURL(file);
+                    });
+                });
+                
+                Promise.all(readers).then(base64Results => {
+                    completeSave(base64Results);
+                });
             } else {
-                completeSave(null);
+                completeSave([]);
             }
         }
 
@@ -2013,6 +2044,22 @@
 
             let framesContent = renderFramesGridForComparison(visit);
 
+            // Obtener las fotos guardadas mapeando la compatibilidad con el formato anterior
+            let photosHTML = '';
+            let currentPhotos = [];
+            if (visit.photos && Array.isArray(visit.photos)) {
+                currentPhotos = visit.photos;
+            } else if (visit.photo) {
+                currentPhotos = [visit.photo];
+            }
+
+            if (currentPhotos.length > 0) {
+                photosHTML += '<h4 style="margin-top:10px;">Fotografías Adjuntas:</h4>';
+                currentPhotos.forEach(photoSrc => {
+                    photosHTML += `<img src="${photoSrc}" class="photo-preview" style="margin-bottom: 8px;">`;
+                });
+            }
+
             body.innerHTML = `
                 <p><strong>Fuerza:</strong> ${visit.force}</p>
                 <p><strong>Alzas:</strong> ${visit.alzas || 0}</p>
@@ -2023,7 +2070,7 @@
                 <p><strong>Observaciones:</strong> ${visit.notes || 'Sin observaciones'}</p>
                 <h4 style="margin-top:12px; font-size:14px;">Cuadros Inspeccionados:</h4>
                 ${framesContent}
-                ${visit.photo ? `<h4 style="margin-top:10px;">Fotografía:</h4><img src="${visit.photo}" class="photo-preview">` : ''}
+                ${photosHTML}
             `;
 
             document.getElementById('visit-detail-modal').classList.remove('hidden');
