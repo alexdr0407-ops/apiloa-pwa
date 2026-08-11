@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -146,7 +146,7 @@
             border-color: var(--samsung-blue);
         }
 
-        /* Botones de Porcentaje para Cría Operculada */
+        /* Botones de Porcentaje para Cría Operculada y Miel */
         .pct-btn-group {
             display: flex;
             gap: 6px;
@@ -155,7 +155,7 @@
         }
         .btn-pct {
             flex: 1;
-            min-width: 70px;
+            min-width: 65px;
             padding: 10px 4px;
             border: 1.5px solid #E0E0E0;
             background-color: #FAFAFA;
@@ -249,7 +249,9 @@
             background: #F0F4F8; 
             border: 1px solid #D0D7DE; 
             border-radius: 12px; 
-            height: 60px; 
+            min-height: 60px; 
+            height: auto;
+            padding: 6px 2px;
             display: flex; 
             align-items: center; 
             justify-content: center; 
@@ -370,53 +372,6 @@
         }
         
         .queen-color { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2); margin-left: 5px; vertical-align: middle; }
-        
-        /* Contenedores y miniaturas para Múltiples Fotos */
-        .photo-gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-
-        .photo-item {
-            position: relative;
-            width: 100%;
-            padding-top: 100%; /* Ratio 1:1 Cuadrado */
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-
-        .photo-item img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .photo-delete-btn {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: rgba(229, 57, 53, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-        }
-
         .photo-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 16px; margin-top: 10px; }
         .history-entry { border-bottom: 1px solid #F0F0F0; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .history-entry:last-child { border-bottom: none; }
@@ -577,18 +532,15 @@
                 <button class="btn btn-info" style="margin-bottom: 10px;" onclick="startDictation()">🎤 Dictar Observación</button>
                 <textarea id="ins-notes" rows="3" placeholder="Observaciones escritas o dictadas..."></textarea>
                 
-                <!-- OPCIÓN PARA ELEGIR MÚLTIPLES FOTOS DE GALERÍA O TOMAR FOTOS -->
-                <label id="photo-input-label">Adjuntar Fotografías</label>
+                <!-- 2. OPCIÓN PARA ELEGIR DE GALERÍA O TOMAR FOTO CON CÁMARA -->
+                <label id="photo-input-label">Adjuntar Fotografía</label>
                 <div style="display:flex; flex-direction:column; gap:6px;">
-                    <label style="font-size:11px; margin-top:2px;">📁 Elegir de la Galería (Múltiple):</label>
-                    <input type="file" id="ins-photo-gallery" accept="image/*" multiple onchange="handleMultiplePhotosSelected(this)">
+                    <label style="font-size:11px; margin-top:2px;">📁 Elegir de la Galería:</label>
+                    <input type="file" id="ins-photo-gallery" accept="image/*">
                     
-                    <label style="font-size:11px; margin-top:2px;">📷 Hacer Fotos con la Cámara:</label>
-                    <input type="file" id="ins-photo-camera" accept="image/*" capture="environment" multiple onchange="handleMultiplePhotosSelected(this)">
+                    <label style="font-size:11px; margin-top:2px;">📷 Hacer una Foto con la Cámara:</label>
+                    <input type="file" id="ins-photo-camera" accept="image/*" capture="environment">
                 </div>
-
-                <!-- VISTA PREVIA DE FOTOS CARGADAS/ADJUNTADAS -->
-                <div id="photo-preview-container" class="photo-gallery-grid"></div>
 
                 <button class="btn btn-success" id="btn-save-inspection" onclick="finishInspection()">Guardar Registro</button>
                 <button class="btn btn-danger" style="background: #888;" onclick="closeModal('inspection-modal')">Cancelar</button>
@@ -635,10 +587,10 @@
                         <label>Porcentaje de Cría Operculada</label>
                         <input type="hidden" id="frame-brood-pct-val" value="">
                         <div class="pct-btn-group">
-                            <button type="button" class="btn-pct" onclick="selectPercentage(this, '0-25%')">0-25%</button>
-                            <button type="button" class="btn-pct" onclick="selectPercentage(this, '25-50%')">25-50%</button>
-                            <button type="button" class="btn-pct" onclick="selectPercentage(this, '50-75%')">50-75%</button>
-                            <button type="button" class="btn-pct" onclick="selectPercentage(this, '75-100%')">75-100%</button>
+                            <button type="button" class="btn-pct brood-btn-pct" onclick="selectPercentage(this, '0-25%')">0-25%</button>
+                            <button type="button" class="btn-pct brood-btn-pct" onclick="selectPercentage(this, '25-50%')">25-50%</button>
+                            <button type="button" class="btn-pct brood-btn-pct" onclick="selectPercentage(this, '50-75%')">50-75%</button>
+                            <button type="button" class="btn-pct brood-btn-pct" onclick="selectPercentage(this, '75-100%')">75-100%</button>
                         </div>
                     </div>
 
@@ -655,13 +607,16 @@
                     </div>
                 </div>
 
+                <!-- CAMBIO SOLICITADO: CANTIDAD DE MIEL AHORA EN RANGOS DE PORCENTAJES -->
                 <label>Miel</label>
-                <select id="frame-honey-amount">
-                    <option value="Nada">Nada</option>
-                    <option value="Poca">Poca</option>
-                    <option value="Media">Media</option>
-                    <option value="Mucha">Mucha</option>
-                </select>
+                <input type="hidden" id="frame-honey-amount" value="Nada">
+                <div class="pct-btn-group" id="honey-pct-section">
+                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, 'Nada')">Nada</button>
+                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, '0-25%')">0-25%</button>
+                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, '25-50%')">25-50%</button>
+                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, '50-75%')">50-75%</button>
+                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, '75-100%')">75-100%</button>
+                </div>
 
                 <label>Polen</label>
                 <select id="frame-pollen">
@@ -830,7 +785,7 @@
             dismissedAlerts: [],
             reminders: []
         };
-        let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, movements: {}, photosBase64: [] };
+        let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, movements: {}, photoBase64: null };
         let editingVisitId = null; 
         let currentFrameKey = null;
         let currentHistoryVisits = [];
@@ -1138,51 +1093,6 @@
             document.getElementById('protein-no').classList.toggle('active', val === 'No');
         }
 
-        // --- GESTIÓN DE MÚLTIPLES FOTOS Y MANEJO EN GALERÍA ---
-        function handleMultiplePhotosSelected(inputEl) {
-            if (!inputEl.files || inputEl.files.length === 0) return;
-            const files = Array.from(inputEl.files);
-            let loadedCount = 0;
-
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentInspection.photosBase64.push(e.target.result);
-                    loadedCount++;
-                    if (loadedCount === files.length) {
-                        renderPhotoPreviews();
-                        inputEl.value = ''; // Limpiar input para permitir relanzar el mismo archivo si se desea
-                    }
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function removePhoto(index) {
-            currentInspection.photosBase64.splice(index, 1);
-            renderPhotoPreviews();
-        }
-
-        function renderPhotoPreviews() {
-            const container = document.getElementById('photo-preview-container');
-            if (!container) return;
-            container.innerHTML = '';
-
-            if (!currentInspection.photosBase64 || currentInspection.photosBase64.length === 0) {
-                return;
-            }
-
-            currentInspection.photosBase64.forEach((photoBase64, idx) => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'photo-item';
-                itemDiv.innerHTML = `
-                    <img src="${photoBase64}" alt="Foto ${idx + 1}">
-                    <button type="button" class="photo-delete-btn" onclick="removePhoto(${idx})">✕</button>
-                `;
-                container.appendChild(itemDiv);
-            });
-        }
-
         // --- MODO NUEVA INSPECCIÓN ---
         function openInspection(hiveIndex) {
             editingVisitId = null;
@@ -1192,7 +1102,7 @@
             const prevVisits = appData.visits.filter(v => v.hiveId === hive.hiveId);
             const lastVisit = prevVisits.length > 0 ? prevVisits[prevVisits.length - 1] : null;
 
-            // 2. Clonar el estado de los cuadros de la inspección anterior (o iniciar vacío)
+            // 2. CAMBIO SOLICITADO: CLONAR AUTOMÁTICAMENTE EL ESTADO ANTERIOR DE LOS CUADROS
             const copiedFrames = lastVisit && lastVisit.frameDetails ? JSON.parse(JSON.stringify(lastVisit.frameDetails)) : {};
 
             currentInspection = { 
@@ -1200,12 +1110,12 @@
                 hiveIndex: hiveIndex, 
                 frames: copiedFrames, 
                 movements: {}, 
-                photosBase64: [] 
+                photoBase64: null 
             };
             
             document.getElementById('ins-hive-title').innerText = `Nueva Inspección: ${hive.hiveId}`;
             document.getElementById('ins-badge-label').innerText = "Información:";
-            document.getElementById('photo-input-label').innerText = "Adjuntar Fotografías";
+            document.getElementById('photo-input-label').innerText = "Adjuntar Fotografía";
             document.getElementById('btn-save-inspection').innerText = "Guardar Registro";
 
             // Asignar fecha por defecto (hoy) al crear
@@ -1232,10 +1142,9 @@
             document.getElementById('ins-photo-gallery').value = '';
             document.getElementById('ins-photo-camera').value = '';
 
-            renderPhotoPreviews();
             renderInspectionFrames();
 
-            // DESPLAZAMIENTO A LA PARTE SUPERIOR
+            // 1. DESPLAZAMIENTO A LA PARTE SUPERIOR (MODAL SCROLL TOP)
             const modalEl = document.getElementById('inspection-modal');
             modalEl.classList.remove('hidden');
             const contentEl = document.getElementById('inspection-modal-content');
@@ -1251,26 +1160,18 @@
             editingVisitId = visitId;
             const hiveIndex = appData.hives.findIndex(h => h.hiveId === visit.hiveId);
             
-            // Cargar fotos guardadas (Soporta múltiples fotos y retrocompatibilidad con una sola foto)
-            let existingPhotos = [];
-            if (Array.isArray(visit.photos) && visit.photos.length > 0) {
-                existingPhotos = [...visit.photos];
-            } else if (visit.photo) {
-                existingPhotos = [visit.photo];
-            }
-
             currentInspection = { 
                 hiveId: visit.hiveId, 
                 hiveIndex: hiveIndex, 
                 frames: JSON.parse(JSON.stringify(visit.frameDetails || {})), 
                 movements: JSON.parse(JSON.stringify(visit.movements || {})),
-                photosBase64: existingPhotos 
+                photoBase64: visit.photo || null 
             };
 
             document.getElementById('ins-hive-title').innerText = `Editar Inspección: ${visit.hiveId}`;
             document.getElementById('ins-badge-label').innerText = "📅 Editar Registro:";
             document.getElementById('ins-prev-info').innerHTML = `Modificando registro del <strong>${visit.date}</strong>`;
-            document.getElementById('photo-input-label').innerText = "Adjuntar Más Fotografías";
+            document.getElementById('photo-input-label').innerText = visit.photo ? "Cambiar Fotografía (Ya tiene una guardada)" : "Adjuntar Fotografía";
             document.getElementById('btn-save-inspection').innerText = "Actualizar Registro";
 
             // Asignar la fecha que tenía el registro para poder modificarla
@@ -1300,12 +1201,11 @@
             document.getElementById('ins-photo-gallery').value = '';
             document.getElementById('ins-photo-camera').value = '';
 
-            renderPhotoPreviews();
             renderInspectionFrames();
 
             closeModal('visit-detail-modal');
 
-            // DESPLAZAMIENTO A LA PARTE SUPERIOR
+            // 1. DESPLAZAMIENTO A LA PARTE SUPERIOR (MODAL SCROLL TOP)
             const modalEl = document.getElementById('inspection-modal');
             modalEl.classList.remove('hidden');
             const contentEl = document.getElementById('inspection-modal-content');
@@ -1330,6 +1230,7 @@
             return keys;
         }
 
+        // CAMBIO SOLICITADO: PREVISUALIZACIÓN DENTRO DE LOS CUADROSGrid SI TIENEN CRÍA, MIEL O POLEN
         function renderInspectionFrames() {
             const hive = appData.hives[currentInspection.hiveIndex];
             if (!hive) return;
@@ -1344,13 +1245,25 @@
             camaraGrid.className = 'frames-grid';
             for (let i = 1; i <= hive.frames.length; i++) {
                 const key = `camara_${i}`;
-                const isInspected = !!currentInspection.frames[key];
+                const f = currentInspection.frames[key];
+                const isInspected = !!f;
                 const movementTag = currentInspection.movements[key] ? `<span class="tag-moved">🔄</span>` : '';
+                
+                let contentInfo = '';
+                if (isInspected && f) {
+                    let parts = [];
+                    if (f.broodPresence && f.broodPresence !== 'Sin cría') parts.push(`👶${f.broodQuality || ''}`);
+                    if (f.honeyAmount && f.honeyAmount !== 'Nada') parts.push(`🍯${f.honeyAmount}`);
+                    if (f.pollen && f.pollen !== 'Nada') parts.push(`🌸${f.pollen}`);
+                    if (parts.length > 0) {
+                        contentInfo = `<div style="font-size: 8px; font-weight: normal; margin-top: 2px; line-height: 1.1;">${parts.join('<br>')}</div>`;
+                    }
+                }
                 
                 const box = document.createElement('div');
                 box.className = `frame-box ${isInspected ? 'inspected' : ''}`;
                 box.id = `ui-frame-${key}`;
-                box.innerHTML = `C${i}${movementTag}`;
+                box.innerHTML = `<strong>C${i}</strong>${movementTag}${contentInfo}`;
                 box.onclick = () => openFrameModal(key, `Cámara - Cuadro ${i}`);
                 camaraGrid.appendChild(box);
             }
@@ -1365,13 +1278,25 @@
                 alzaGrid.className = 'frames-grid';
                 for (let i = 1; i <= 10; i++) {
                     const key = `alza${a}_${i}`;
-                    const isInspected = !!currentInspection.frames[key];
+                    const f = currentInspection.frames[key];
+                    const isInspected = !!f;
                     const movementTag = currentInspection.movements[key] ? `<span class="tag-moved">🔄</span>` : '';
+
+                    let contentInfo = '';
+                    if (isInspected && f) {
+                        let parts = [];
+                        if (f.broodPresence && f.broodPresence !== 'Sin cría') parts.push(`👶${f.broodQuality || ''}`);
+                        if (f.honeyAmount && f.honeyAmount !== 'Nada') parts.push(`🍯${f.honeyAmount}`);
+                        if (f.pollen && f.pollen !== 'Nada') parts.push(`🌸${f.pollen}`);
+                        if (parts.length > 0) {
+                            contentInfo = `<div style="font-size: 8px; font-weight: normal; margin-top: 2px; line-height: 1.1;">${parts.join('<br>')}</div>`;
+                        }
+                    }
 
                     const box = document.createElement('div');
                     box.className = `frame-box ${isInspected ? 'inspected' : ''}`;
                     box.id = `ui-frame-${key}`;
-                    box.innerHTML = `A${a}-C${i}${movementTag}`;
+                    box.innerHTML = `<strong>A${a}-C${i}</strong>${movementTag}${contentInfo}`;
                     box.onclick = () => openFrameModal(key, `Alza ${a} - Cuadro ${i}`);
                     alzaGrid.appendChild(box);
                 }
@@ -1380,7 +1305,7 @@
             }
         }
 
-        // ALTERNAR SELECTOR O BOTONES DE PORCENTAJE SEGÚN CRÍA OPERCULADA
+        // 3. ALTERNAR SELECTOR O BOTONES DE PORCENTAJE SEGÚN CRÍA OPERCULADA
         function toggleBroodQuality() {
             const val = document.getElementById('frame-brood-presence').value;
             const container = document.getElementById('frame-brood-quality-container');
@@ -1401,21 +1326,33 @@
             }
         }
 
-        // SELECCIONAR BOTÓN DE PORCENTAJE
+        // 3. SELECCIONAR BOTÓN DE PORCENTAJE (CRÍA)
         function selectPercentage(btnEl, pctValue) {
             const group = btnEl.parentElement;
-            group.querySelectorAll('.btn-pct').forEach(b => b.classList.remove('active'));
+            group.querySelectorAll('.brood-btn-pct').forEach(b => b.classList.remove('active'));
             btnEl.classList.add('active');
             document.getElementById('frame-brood-pct-val').value = pctValue;
+        }
+
+        // CAMBIO SOLICITADO: SELECCIONAR BOTÓN DE PORCENTAJE (MIEL)
+        function selectHoneyPercentage(btnEl, honeyValue) {
+            const group = btnEl.parentElement;
+            group.querySelectorAll('.honey-btn-pct').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            document.getElementById('frame-honey-amount').value = honeyValue;
         }
 
         function openFrameModal(key, displayName) {
             currentFrameKey = key;
             document.getElementById('frame-modal-title').innerText = displayName;
             
-            // Limpiar estados de porcentaje
-            document.querySelectorAll('.btn-pct').forEach(b => b.classList.remove('active'));
+            // Limpiar estados de porcentaje de cría
+            document.querySelectorAll('.brood-btn-pct').forEach(b => b.classList.remove('active'));
             document.getElementById('frame-brood-pct-val').value = '';
+
+            // Limpiar estados de porcentaje de miel
+            document.querySelectorAll('.honey-btn-pct').forEach(b => b.classList.remove('active'));
+            document.getElementById('frame-honey-amount').value = 'Nada';
 
             const existing = currentInspection.frames[key];
             if (existing) {
@@ -1426,21 +1363,33 @@
                 if (existing.broodPresence === 'Cría operculada' && existing.broodQuality) {
                     const pctVal = existing.broodQuality;
                     document.getElementById('frame-brood-pct-val').value = pctVal;
-                    document.querySelectorAll('.btn-pct').forEach(b => {
+                    document.querySelectorAll('.brood-btn-pct').forEach(b => {
                         if (b.innerText === pctVal) b.classList.add('active');
                     });
                 } else {
                     document.getElementById('frame-brood-quality').value = existing.broodQuality || 'Media';
                 }
 
-                document.getElementById('frame-honey-amount').value = existing.honeyAmount || 'Nada';
+                // Cargar valor de Miel en porcentaje
+                const honeyVal = existing.honeyAmount || 'Nada';
+                document.getElementById('frame-honey-amount').value = honeyVal;
+                document.querySelectorAll('.honey-btn-pct').forEach(b => {
+                    if (b.innerText === honeyVal) b.classList.add('active');
+                });
+
                 document.getElementById('frame-pollen').value = existing.pollen || 'Nada';
             } else {
                 document.getElementById('frame-type').value = 'Cuadro de cera estampada';
                 document.getElementById('frame-physical').value = 'Buen Estado';
                 document.getElementById('frame-brood-presence').value = 'Sin cría';
                 document.getElementById('frame-brood-quality').value = 'Media';
+                
+                // Valores por defecto
                 document.getElementById('frame-honey-amount').value = 'Nada';
+                document.querySelectorAll('.honey-btn-pct').forEach(b => {
+                    if (b.innerText === 'Nada') b.classList.add('active');
+                });
+                
                 document.getElementById('frame-pollen').value = 'Nada';
             }
 
@@ -1503,6 +1452,11 @@
                 document.getElementById('frame-type').value = 'Cuadro de cera estampada';
                 document.getElementById('frame-physical').value = 'Buen Estado';
                 document.getElementById('frame-brood-presence').value = 'Sin cría';
+                
+                document.getElementById('frame-honey-amount').value = 'Nada';
+                document.querySelectorAll('.honey-btn-pct').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.honey-btn-pct').forEach(b => { if(b.innerText === 'Nada') b.classList.add('active'); });
+
                 document.getElementById('frame-honey-amount').value = 'Nada';
                 document.getElementById('frame-pollen').value = 'Nada';
                 toggleBroodQuality();
@@ -1534,8 +1488,7 @@
                 pollen: document.getElementById('frame-pollen').value
             };
 
-            const el = document.getElementById(`ui-frame-${currentFrameKey}`);
-            if (el) el.classList.add('inspected');
+            renderInspectionFrames();
             closeModal('frame-modal');
         }
 
@@ -1553,7 +1506,12 @@
 
         function finishInspection() {
             const hiveIndex = appData.hives.findIndex(h => h.hiveId === currentInspection.hiveId);
+            const fileGallery = document.getElementById('ins-photo-gallery');
+            const fileCamera = document.getElementById('ins-photo-camera');
             const treatmentText = document.getElementById('ins-treatment').value.trim();
+
+            // Usar el archivo adjuntado (Prioridad: Galería o Cámara)
+            const selectedFile = (fileGallery.files && fileGallery.files[0]) ? fileGallery.files[0] : ((fileCamera.files && fileCamera.files[0]) ? fileCamera.files[0] : null);
 
             const chosenDateInput = document.getElementById('ins-date-input').value;
             const selectedDate = chosenDateInput ? chosenDateInput : new Date().toISOString().split('T')[0];
@@ -1564,14 +1522,32 @@
                 finalFeedText += ` (Jarabe ${selectedFeedProportion})`;
             }
 
-            const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
-            const photosToSave = currentInspection.photosBase64 || [];
+            const completeSave = (photoData) => {
+                const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
 
-            if (editingVisitId) {
-                const visitIndex = appData.visits.findIndex(v => v.visitId === editingVisitId);
-                if (visitIndex !== -1) {
-                    appData.visits[visitIndex] = {
-                        visitId: editingVisitId,
+                if (editingVisitId) {
+                    const visitIndex = appData.visits.findIndex(v => v.visitId === editingVisitId);
+                    if (visitIndex !== -1) {
+                        appData.visits[visitIndex] = {
+                            visitId: editingVisitId,
+                            hiveId: currentInspection.hiveId,
+                            date: selectedDate,
+                            force: document.getElementById('ins-force').value,
+                            alzas: numAlzas,
+                            behavior: document.getElementById('ins-behavior').value,
+                            feed: finalFeedText,
+                            protein: selectedProtein,
+                            treatment: treatmentText,
+                            notes: document.getElementById('ins-notes').value,
+                            photo: photoData !== null ? photoData : currentInspection.photoBase64,
+                            frameDetails: currentInspection.frames,
+                            movements: currentInspection.movements
+                        };
+                        showSamsungToast("Registro actualizado correctamente");
+                    }
+                } else {
+                    const visitData = {
+                        visitId: generateID(),
                         hiveId: currentInspection.hiveId,
                         date: selectedDate,
                         force: document.getElementById('ins-force').value,
@@ -1581,68 +1557,57 @@
                         protein: selectedProtein,
                         treatment: treatmentText,
                         notes: document.getElementById('ins-notes').value,
-                        photos: photosToSave,
-                        photo: photosToSave[0] || null, // Mantener compatibilidad previa
+                        photo: photoData,
                         frameDetails: currentInspection.frames,
                         movements: currentInspection.movements
                     };
-                    showSamsungToast("Registro actualizado correctamente");
+
+                    appData.visits.push(visitData);
+                    showSamsungToast("Inspección guardada");
                 }
-            } else {
-                const visitData = {
-                    visitId: generateID(),
-                    hiveId: currentInspection.hiveId,
-                    date: selectedDate,
-                    force: document.getElementById('ins-force').value,
-                    alzas: numAlzas,
-                    behavior: document.getElementById('ins-behavior').value,
-                    feed: finalFeedText,
-                    protein: selectedProtein,
-                    treatment: treatmentText,
-                    notes: document.getElementById('ins-notes').value,
-                    photos: photosToSave,
-                    photo: photosToSave[0] || null, // Mantener compatibilidad previa
-                    frameDetails: currentInspection.frames,
-                    movements: currentInspection.movements
-                };
 
-                appData.visits.push(visitData);
-                showSamsungToast("Inspección guardada");
-            }
+                updateHiveLastVisit(currentInspection.hiveId);
 
-            updateHiveLastVisit(currentInspection.hiveId);
-
-            if (treatmentText !== '' && !editingVisitId) {
-                const weeksInput = prompt(`Tratamiento: "${treatmentText}"\n¿Programar aviso en cuántas SEMANAS?`, "2");
-                if (weeksInput !== null) {
-                    const weeks = parseInt(weeksInput, 10);
-                    if (!isNaN(weeks) && weeks >= 0) {
-                        const targetDate = new Date();
-                        targetDate.setDate(targetDate.getDate() + (weeks * 7));
-                        if (!appData.reminders) appData.reminders = [];
-                        appData.reminders.push({
-                            id: 'rem_' + generateID(),
-                            hiveId: currentInspection.hiveId,
-                            treatment: treatmentText,
-                            targetDate: targetDate.toISOString().split('T')[0],
-                            weeks: weeks
-                        });
+                if (treatmentText !== '' && !editingVisitId) {
+                    const weeksInput = prompt(`Tratamiento: "${treatmentText}"\n¿Programar aviso en cuántas SEMANAS?`, "2");
+                    if (weeksInput !== null) {
+                        const weeks = parseInt(weeksInput, 10);
+                        if (!isNaN(weeks) && weeks >= 0) {
+                            const targetDate = new Date();
+                            targetDate.setDate(targetDate.getDate() + (weeks * 7));
+                            if (!appData.reminders) appData.reminders = [];
+                            appData.reminders.push({
+                                id: 'rem_' + generateID(),
+                                hiveId: currentInspection.hiveId,
+                                treatment: treatmentText,
+                                targetDate: targetDate.toISOString().split('T')[0],
+                                weeks: weeks
+                            });
+                        }
                     }
                 }
-            }
 
-            appData.hives[hiveIndex].alzas = numAlzas;
+                appData.hives[hiveIndex].alzas = numAlzas;
 
-            saveData();
-            closeModal('inspection-modal');
-            
-            if (!document.getElementById('history-modal').classList.contains('hidden')) {
-                openHiveHistory(currentInspection.hiveId);
+                saveData();
+                closeModal('inspection-modal');
+                
+                if (!document.getElementById('history-modal').classList.contains('hidden')) {
+                    openHiveHistory(currentInspection.hiveId);
+                }
+                
+                editingVisitId = null;
+                renderDashboard();
+                renderHives();
+            };
+
+            if (selectedFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) { completeSave(e.target.result); };
+                reader.readAsDataURL(selectedFile);
+            } else {
+                completeSave(null);
             }
-            
-            editingVisitId = null;
-            renderDashboard();
-            renderHives();
         }
 
         function startDictation() {
@@ -1781,11 +1746,13 @@
             return 1.5;
         }
 
+        // ADAPTACIÓN: CONVERSIÓN DE CANTIDADES DE MIEL INCLUYENDO VALORES DE PORCENTAJES EN GRÁFICOS
         function getAmountNumericValue(amountStr) {
             if (amountStr === 'Nada' || !amountStr) return 0;
-            if (amountStr === 'Poca') return 1;
-            if (amountStr === 'Media') return 2;
-            if (amountStr === 'Mucha') return 3;
+            if (amountStr === 'Poca' || amountStr === '0-25%') return 1;
+            if (amountStr === 'Media' || amountStr === '25-50%') return 2;
+            if (amountStr === 'Mucha' || amountStr === '50-75%') return 2.5;
+            if (amountStr === '75-100%') return 3;
             return 0;
         }
 
@@ -1900,7 +1867,7 @@
                                 precision: 0,
                                 callback: function(value) {
                                     if (metricSelect.startsWith('frame_')) {
-                                        const levels = ['Sin Nada', 'Escaso/Poco', 'Medio', 'Abundante/Mucho'];
+                                        const levels = ['Sin Nada', '0-25% / Poco', '25-50% / Medio', '50-100% / Mucho'];
                                         return levels[value] || value;
                                     }
                                     return value;
@@ -2060,21 +2027,6 @@
 
             let framesContent = renderFramesGridForComparison(visit);
 
-            // Cargar fotos guardadas (Compatibilidad entre array y foto individual)
-            let photosHTML = '';
-            const allPhotos = (Array.isArray(visit.photos) && visit.photos.length > 0) ? visit.photos : (visit.photo ? [visit.photo] : []);
-
-            if (allPhotos.length > 0) {
-                photosHTML = '<h4 style="margin-top:10px;">Fotografías:</h4><div class="photo-gallery-grid">';
-                allPhotos.forEach((ph, idx) => {
-                    photosHTML += `
-                        <div class="photo-item">
-                            <img src="${ph}" alt="Foto ${idx + 1}" onclick="window.open('${ph}', '_blank')">
-                        </div>`;
-                });
-                photosHTML += '</div>';
-            }
-
             body.innerHTML = `
                 <p><strong>Fuerza:</strong> ${visit.force}</p>
                 <p><strong>Alzas:</strong> ${visit.alzas || 0}</p>
@@ -2085,7 +2037,7 @@
                 <p><strong>Observaciones:</strong> ${visit.notes || 'Sin observaciones'}</p>
                 <h4 style="margin-top:12px; font-size:14px;">Cuadros Inspeccionados:</h4>
                 ${framesContent}
-                ${photosHTML}
+                ${visit.photo ? `<h4 style="margin-top:10px;">Fotografía:</h4><img src="${visit.photo}" class="photo-preview">` : ''}
             `;
 
             document.getElementById('visit-detail-modal').classList.remove('hidden');
