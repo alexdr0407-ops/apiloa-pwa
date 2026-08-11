@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -146,7 +146,7 @@
             border-color: var(--samsung-blue);
         }
 
-        /* Botones de Porcentaje para Cría Operculada y Miel */
+        /* Botones de Porcentaje para Cría, Miel y Polen */
         .pct-btn-group {
             display: flex;
             gap: 6px;
@@ -296,7 +296,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Prioridad de capas: La ventana de edición y detalle de cuadro saldrán por delante del historial */
         #inspection-modal, #frame-modal {
             z-index: 1100;
         }
@@ -329,7 +328,6 @@
             margin: 0 auto 15px auto;
         }
 
-        /* Botón de Cierre (X) rápido para modales */
         .modal-close-x {
             position: absolute;
             top: 16px;
@@ -459,7 +457,6 @@
         <div id="inspection-modal" class="modal hidden">
             <div class="modal-content" id="inspection-modal-content">
                 <div class="modal-handle"></div>
-                <!-- Botón 'X' para cerrar modal de inspección -->
                 <button type="button" class="modal-close-x" onclick="closeModal('inspection-modal')">✕</button>
 
                 <h2 id="ins-hive-title" style="margin-bottom: 10px; color: var(--samsung-dark); padding-right: 35px;">Inspección</h2>
@@ -469,7 +466,6 @@
                     <span id="ins-prev-info" style="font-size: 13px;">Sin datos previos.</span>
                 </div>
 
-                <!-- 1. CAMPO FECHA PERSONALIZABLE -->
                 <label>Fecha de la Inspección</label>
                 <input type="date" id="ins-date-input">
 
@@ -532,7 +528,6 @@
                 <button class="btn btn-info" style="margin-bottom: 10px;" onclick="startDictation()">🎤 Dictar Observación</button>
                 <textarea id="ins-notes" rows="3" placeholder="Observaciones escritas o dictadas..."></textarea>
                 
-                <!-- 2. OPCIÓN PARA ELEGIR DE GALERÍA O TOMAR FOTO CON CÁMARA -->
                 <label id="photo-input-label">Adjuntar Fotografía</label>
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     <label style="font-size:11px; margin-top:2px;">📁 Elegir de la Galería:</label>
@@ -551,7 +546,6 @@
         <div id="frame-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-handle"></div>
-                <!-- 2. BOTÓN "X" PARA CERRAR/CANCELAR SI TE CONFUNDES AL PINCHAR EN UN CUADRO -->
                 <button type="button" class="modal-close-x" onclick="closeModal('frame-modal')">✕</button>
 
                 <h3 id="frame-modal-title" style="margin-bottom: 15px; padding-right: 35px;">Detalle del Cuadro</h3>
@@ -582,7 +576,6 @@
                 </select>
 
                 <div id="frame-brood-quality-container" class="hidden">
-                    <!-- 3. SI LA CRÍA ES OPERCULADA, BOTONES DE PORCENTAJE (0-25%, 25-50%, 50-75%, 75-100%) -->
                     <div id="brood-pct-section" class="hidden">
                         <label>Porcentaje de Cría Operculada</label>
                         <input type="hidden" id="frame-brood-pct-val" value="">
@@ -594,7 +587,6 @@
                         </div>
                     </div>
 
-                    <!-- SELECTOR HABITUAL PARA OTROS TIPOS DE CRÍA -->
                     <div id="brood-select-section">
                         <label>Cantidad / Calidad de Cría</label>
                         <select id="frame-brood-quality">
@@ -607,7 +599,6 @@
                     </div>
                 </div>
 
-                <!-- CAMBIO SOLICITADO: CANTIDAD DE MIEL AHORA EN RANGOS DE PORCENTAJES -->
                 <label>Miel</label>
                 <input type="hidden" id="frame-honey-amount" value="Nada">
                 <div class="pct-btn-group" id="honey-pct-section">
@@ -618,15 +609,17 @@
                     <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, '75-100%')">75-100%</button>
                 </div>
 
+                <!-- NUEVO CAMBIO SOLICITADO: PORCENTAJES DE POLEN EN RANGOS -->
                 <label>Polen</label>
-                <select id="frame-pollen">
-                    <option value="Nada">Nada</option>
-                    <option value="Poca">Poca</option>
-                    <option value="Media">Media</option>
-                    <option value="Mucha">Mucha</option>
-                </select>
+                <input type="hidden" id="frame-pollen" value="Nada">
+                <div class="pct-btn-group" id="pollen-pct-section">
+                    <button type="button" class="btn-pct pollen-btn-pct" onclick="selectPollenPercentage(this, 'Nada')">Nada</button>
+                    <button type="button" class="btn-pct pollen-btn-pct" onclick="selectPollenPercentage(this, '0-25%')">0-25%</button>
+                    <button type="button" class="btn-pct pollen-btn-pct" onclick="selectPollenPercentage(this, '25-50%')">25-50%</button>
+                    <button type="button" class="btn-pct pollen-btn-pct" onclick="selectPollenPercentage(this, '50-75%')">50-75%</button>
+                    <button type="button" class="btn-pct pollen-btn-pct" onclick="selectPollenPercentage(this, '75-100%')">75-100%</button>
+                </div>
 
-                <!-- MOVER / CAMBIAR ORDEN Y REEMPLAZAR -->
                 <div style="margin-top:15px; padding-top:15px; border-top:1px solid #E0E0E0;">
                     <h4 style="font-size: 14px; margin-bottom: 8px; color: var(--samsung-dark);">🔄 Cambiar Posición / Reemplazar</h4>
                     
@@ -1093,16 +1086,13 @@
             document.getElementById('protein-no').classList.toggle('active', val === 'No');
         }
 
-        // --- MODO NUEVA INSPECCIÓN ---
         function openInspection(hiveIndex) {
             editingVisitId = null;
             const hive = appData.hives[hiveIndex];
             
-            // 1. Obtener la última inspección de esta unidad
             const prevVisits = appData.visits.filter(v => v.hiveId === hive.hiveId);
             const lastVisit = prevVisits.length > 0 ? prevVisits[prevVisits.length - 1] : null;
 
-            // 2. CAMBIO SOLICITADO: CLONAR AUTOMÁTICAMENTE EL ESTADO ANTERIOR DE LOS CUADROS
             const copiedFrames = lastVisit && lastVisit.frameDetails ? JSON.parse(JSON.stringify(lastVisit.frameDetails)) : {};
 
             currentInspection = { 
@@ -1118,10 +1108,8 @@
             document.getElementById('photo-input-label').innerText = "Adjuntar Fotografía";
             document.getElementById('btn-save-inspection').innerText = "Guardar Registro";
 
-            // Asignar fecha por defecto (hoy) al crear
             document.getElementById('ins-date-input').value = new Date().toISOString().split('T')[0];
 
-            // 3. Cargar datos generales anteriores (Alzas, Fuerza, Comportamiento) si existen
             document.getElementById('ins-alzas').value = lastVisit ? (lastVisit.alzas || 0) : (hive.alzas || 0);
             document.getElementById('ins-force').value = lastVisit ? lastVisit.force : 'Fuerte';
             document.getElementById('ins-behavior').value = lastVisit ? lastVisit.behavior : 'Tranquila';
@@ -1132,7 +1120,6 @@
                 document.getElementById('ins-prev-info').innerText = 'Sin visitas previas. Se inicia con plantilla nueva.';
             }
 
-            // 4. EXCLUIR Y RESETEAR: Comida, Medicamentos/Tratamiento, Notas y Fotografía
             document.getElementById('ins-feed-type').value = 'Ninguna';
             toggleFeedProportion();
             setFeedProportion('1:1');
@@ -1144,7 +1131,6 @@
 
             renderInspectionFrames();
 
-            // 1. DESPLAZAMIENTO A LA PARTE SUPERIOR (MODAL SCROLL TOP)
             const modalEl = document.getElementById('inspection-modal');
             modalEl.classList.remove('hidden');
             const contentEl = document.getElementById('inspection-modal-content');
@@ -1152,7 +1138,6 @@
             window.scrollTo(0, 0);
         }
 
-        // --- MODO EDITAR INSPECCIÓN ---
         function editInspection(visitId) {
             const visit = appData.visits.find(v => v.visitId === visitId);
             if (!visit) return;
@@ -1174,7 +1159,6 @@
             document.getElementById('photo-input-label').innerText = visit.photo ? "Cambiar Fotografía (Ya tiene una guardada)" : "Adjuntar Fotografía";
             document.getElementById('btn-save-inspection').innerText = "Actualizar Registro";
 
-            // Asignar la fecha que tenía el registro para poder modificarla
             document.getElementById('ins-date-input').value = visit.date || new Date().toISOString().split('T')[0];
 
             document.getElementById('ins-force').value = visit.force || 'Fuerte';
@@ -1205,7 +1189,6 @@
 
             closeModal('visit-detail-modal');
 
-            // 1. DESPLAZAMIENTO A LA PARTE SUPERIOR (MODAL SCROLL TOP)
             const modalEl = document.getElementById('inspection-modal');
             modalEl.classList.remove('hidden');
             const contentEl = document.getElementById('inspection-modal-content');
@@ -1230,7 +1213,6 @@
             return keys;
         }
 
-        // CAMBIO SOLICITADO: PREVISUALIZACIÓN DENTRO DE LOS CUADROSGrid SI TIENEN CRÍA, MIEL O POLEN
         function renderInspectionFrames() {
             const hive = appData.hives[currentInspection.hiveIndex];
             if (!hive) return;
@@ -1305,7 +1287,6 @@
             }
         }
 
-        // 3. ALTERNAR SELECTOR O BOTONES DE PORCENTAJE SEGÚN CRÍA OPERCULADA
         function toggleBroodQuality() {
             const val = document.getElementById('frame-brood-presence').value;
             const container = document.getElementById('frame-brood-quality-container');
@@ -1326,7 +1307,6 @@
             }
         }
 
-        // 3. SELECCIONAR BOTÓN DE PORCENTAJE (CRÍA)
         function selectPercentage(btnEl, pctValue) {
             const group = btnEl.parentElement;
             group.querySelectorAll('.brood-btn-pct').forEach(b => b.classList.remove('active'));
@@ -1334,7 +1314,6 @@
             document.getElementById('frame-brood-pct-val').value = pctValue;
         }
 
-        // CAMBIO SOLICITADO: SELECCIONAR BOTÓN DE PORCENTAJE (MIEL)
         function selectHoneyPercentage(btnEl, honeyValue) {
             const group = btnEl.parentElement;
             group.querySelectorAll('.honey-btn-pct').forEach(b => b.classList.remove('active'));
@@ -1342,17 +1321,26 @@
             document.getElementById('frame-honey-amount').value = honeyValue;
         }
 
+        // CONTROLADOR DE LOS NUEVOS BOTONES DE PORCENTAJE DE POLEN
+        function selectPollenPercentage(btnEl, pollenValue) {
+            const group = btnEl.parentElement;
+            group.querySelectorAll('.pollen-btn-pct').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            document.getElementById('frame-pollen').value = pollenValue;
+        }
+
         function openFrameModal(key, displayName) {
             currentFrameKey = key;
             document.getElementById('frame-modal-title').innerText = displayName;
             
-            // Limpiar estados de porcentaje de cría
             document.querySelectorAll('.brood-btn-pct').forEach(b => b.classList.remove('active'));
             document.getElementById('frame-brood-pct-val').value = '';
 
-            // Limpiar estados de porcentaje de miel
             document.querySelectorAll('.honey-btn-pct').forEach(b => b.classList.remove('active'));
             document.getElementById('frame-honey-amount').value = 'Nada';
+
+            document.querySelectorAll('.pollen-btn-pct').forEach(b => b.classList.remove('active'));
+            document.getElementById('frame-pollen').value = 'Nada';
 
             const existing = currentInspection.frames[key];
             if (existing) {
@@ -1370,30 +1358,35 @@
                     document.getElementById('frame-brood-quality').value = existing.broodQuality || 'Media';
                 }
 
-                // Cargar valor de Miel en porcentaje
                 const honeyVal = existing.honeyAmount || 'Nada';
                 document.getElementById('frame-honey-amount').value = honeyVal;
                 document.querySelectorAll('.honey-btn-pct').forEach(b => {
                     if (b.innerText === honeyVal) b.classList.add('active');
                 });
 
-                document.getElementById('frame-pollen').value = existing.pollen || 'Nada';
+                // Cargar Polen guardado en porcentaje
+                const pollenVal = existing.pollen || 'Nada';
+                document.getElementById('frame-pollen').value = pollenVal;
+                document.querySelectorAll('.pollen-btn-pct').forEach(b => {
+                    if (b.innerText === pollenVal) b.classList.add('active');
+                });
             } else {
                 document.getElementById('frame-type').value = 'Cuadro de cera estampada';
                 document.getElementById('frame-physical').value = 'Buen Estado';
                 document.getElementById('frame-brood-presence').value = 'Sin cría';
                 document.getElementById('frame-brood-quality').value = 'Media';
                 
-                // Valores por defecto
                 document.getElementById('frame-honey-amount').value = 'Nada';
                 document.querySelectorAll('.honey-btn-pct').forEach(b => {
                     if (b.innerText === 'Nada') b.classList.add('active');
                 });
                 
                 document.getElementById('frame-pollen').value = 'Nada';
+                document.querySelectorAll('.pollen-btn-pct').forEach(b => {
+                    if (b.innerText === 'Nada') b.classList.add('active');
+                });
             }
 
-            // Opciones de Mover
             const swapSelect = document.getElementById('swap-target-select');
             swapSelect.innerHTML = '';
             const allKeys = getAllFrameKeys();
@@ -1457,11 +1450,12 @@
                 document.querySelectorAll('.honey-btn-pct').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.honey-btn-pct').forEach(b => { if(b.innerText === 'Nada') b.classList.add('active'); });
 
-                document.getElementById('frame-honey-amount').value = 'Nada';
                 document.getElementById('frame-pollen').value = 'Nada';
-                toggleBroodQuality();
+                document.querySelectorAll('.pollen-btn-pct').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.pollen-btn-pct').forEach(b => { if(b.innerText === 'Nada') b.classList.add('active'); });
 
-                showSamsungToast("Cuadro reemplazado. Modifica sus datos si es necesario.");
+                toggleBroodQuality();
+                showSamsungToast("Cuadro reemplazado.");
                 saveFrameDetail();
             }
         }
@@ -1510,7 +1504,6 @@
             const fileCamera = document.getElementById('ins-photo-camera');
             const treatmentText = document.getElementById('ins-treatment').value.trim();
 
-            // Usar el archivo adjuntado (Prioridad: Galería o Cámara)
             const selectedFile = (fileGallery.files && fileGallery.files[0]) ? fileGallery.files[0] : ((fileCamera.files && fileCamera.files[0]) ? fileCamera.files[0] : null);
 
             const chosenDateInput = document.getElementById('ins-date-input').value;
@@ -1543,7 +1536,7 @@
                             frameDetails: currentInspection.frames,
                             movements: currentInspection.movements
                         };
-                        showSamsungToast("Registro actualizado correctamente");
+                        showSamsungToast("Registro actualizado");
                     }
                 } else {
                     const visitData = {
@@ -1624,7 +1617,7 @@
                 };
                 recognition.start();
             } else {
-                showSamsungToast("Dictado no soportado por este navegador");
+                showSamsungToast("Dictado no soportado");
             }
         }
 
@@ -1658,7 +1651,6 @@
                 }
             }
 
-            // Poblar lista para selección personalizada del gráfico
             const customContainer = document.getElementById('chart-custom-visits-container');
             customContainer.innerHTML = '';
             currentHistoryVisits.forEach(v => {
@@ -1713,17 +1705,13 @@
 
         function getFilteredVisitsForChart() {
             const filter = document.getElementById('chart-visit-filter').value;
-            if (filter === 'last3') {
-                return currentHistoryVisits.slice(-3);
-            }
-            if (filter === 'last5') {
-                return currentHistoryVisits.slice(-5);
-            }
+            if (filter === 'last3') return currentHistoryVisits.slice(-3);
+            if (filter === 'last5') return currentHistoryVisits.slice(-5);
             if (filter === 'custom') {
                 const checkedIds = Array.from(document.querySelectorAll('.chart-date-checkbox:checked')).map(cb => cb.value);
                 return currentHistoryVisits.filter(v => checkedIds.includes(v.visitId));
             }
-            return currentHistoryVisits; // 'all'
+            return currentHistoryVisits;
         }
 
         function onChartMetricChange() {
@@ -1746,7 +1734,6 @@
             return 1.5;
         }
 
-        // ADAPTACIÓN: CONVERSIÓN DE CANTIDADES DE MIEL INCLUYENDO VALORES DE PORCENTAJES EN GRÁFICOS
         function getAmountNumericValue(amountStr) {
             if (amountStr === 'Nada' || !amountStr) return 0;
             if (amountStr === 'Poca' || amountStr === '0-25%') return 1;
@@ -1867,7 +1854,7 @@
                                 precision: 0,
                                 callback: function(value) {
                                     if (metricSelect.startsWith('frame_')) {
-                                        const levels = ['Sin Nada', '0-25% / Poco', '25-50% / Medio', '50-100% / Mucho'];
+                                        const levels = ['Sin Nada', '0-25%', '25-50%', '50-100%'];
                                         return levels[value] || value;
                                     }
                                     return value;
@@ -1879,7 +1866,6 @@
             });
         }
 
-        // --- FUNCIONES DEL COMPARADOR DE FICHAS DE CUADROS ---
         function openCompareModal() {
             if (currentHistoryVisits.length < 1) {
                 showSamsungToast("No hay registros para comparar");
@@ -1933,7 +1919,7 @@
 
         function renderFramesGridForComparison(visit) {
             if (!visit || !visit.frameDetails || Object.keys(visit.frameDetails).length === 0) {
-                return '<p style="font-size:12px; color:var(--samsung-secondary); padding:8px 0;">Sin datos de cuadros en esta inspección.</p>';
+                return '<p style="font-size:12px; color:var(--samsung-secondary); padding:8px 0;">Sin datos de cuadros.</p>';
             }
 
             let html = '';
