@@ -620,14 +620,25 @@
                     </div>
                 </div>
 
-                <label>Miel</label>
+                <label>Cantidad de Miel</label>
                 <input type="hidden" id="frame-honey-amount" value="Nada">
                 <div class="pct-btn-group" id="honey-pct-section">
                     <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, 'Nada')">Nada</button>
-                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, '0-25%')">0-25%</button>
-                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, '25-50%')">25-50%</button>
-                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, '50-75%')">50-75%</button>
-                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, '75-100%')">75-100%</button>
+                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, 'Poca')">Poca</button>
+                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, 'Mucha')">Mucha</button>
+                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, 'Abundante')">Abundante</button>
+                </div>
+
+                <div id="honey-operculated-container" class="hidden">
+                    <label>Cantidad de Miel Operculada</label>
+                    <input type="hidden" id="frame-honey-operculated" value="Nada">
+                    <div class="pct-btn-group" id="honey-op-pct-section">
+                        <button type="button" class="btn-pct honey-op-btn-pct" onclick="selectHoneyOpPercentage(this, 'Nada')">Nada</button>
+                        <button type="button" class="btn-pct honey-op-btn-pct" onclick="selectHoneyOpPercentage(this, '0-25%')">0-25%</button>
+                        <button type="button" class="btn-pct honey-op-btn-pct" onclick="selectHoneyOpPercentage(this, '25-50%')">25-50%</button>
+                        <button type="button" class="btn-pct honey-op-btn-pct" onclick="selectHoneyOpPercentage(this, '50-75%')">50-75%</button>
+                        <button type="button" class="btn-pct honey-op-btn-pct" onclick="selectHoneyOpPercentage(this, '75-100%')">75-100%</button>
+                    </div>
                 </div>
 
                 <label>Polen</label>
@@ -676,6 +687,7 @@
                             <option value="alzas">Número de Alzas</option>
                             <option value="cria">Total Cuadros con Cría</option>
                             <option value="miel">Total Cuadros con Miel</option>
+                            <option value="cata_cosecha">Cuadros cosechados (Cata)</option>
                         </optgroup>
                         <optgroup label="Seguimiento por Cuadro Específico" id="chart-frame-optgroup">
                             <!-- Se llena dinámicamente -->
@@ -687,6 +699,7 @@
                         <select id="chart-frame-submetric" onchange="updateHistoryChart()" style="margin-bottom:10px;">
                             <option value="cria">Estado de Cría</option>
                             <option value="miel">Nivel de Miel</option>
+                            <option value="miel_op">Miel Operculada</option>
                             <option value="polen">Nivel de Polen</option>
                         </select>
                     </div>
@@ -798,7 +811,7 @@
             dismissedAlerts: [],
             reminders: []
         };
-        let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, movements: {}, photosBase64: [] };
+        let currentInspection = { hiveId: null, hiveIndex: null, frames: {}, movements: {}, photosBase64: [], cataCount: 0 };
         let editingVisitId = null; 
         let currentFrameKey = null;
         let currentHistoryVisits = [];
@@ -1120,7 +1133,8 @@
                 hiveIndex: hiveIndex, 
                 frames: copiedFrames, 
                 movements: {}, 
-                photosBase64: [] 
+                photosBase64: [],
+                cataCount: 0
             };
             
             document.getElementById('ins-hive-title').innerText = `Nueva Inspección: ${hive.hiveId}`;
@@ -1177,7 +1191,8 @@
                 hiveIndex: hiveIndex, 
                 frames: JSON.parse(JSON.stringify(visit.frameDetails || {})), 
                 movements: JSON.parse(JSON.stringify(visit.movements || {})),
-                photosBase64: existingPhotos 
+                photosBase64: existingPhotos,
+                cataCount: visit.cataCount || 0
             };
 
             document.getElementById('ins-hive-title').innerText = `Editar Inspección: ${visit.hiveId}`;
@@ -1332,15 +1347,17 @@
                     const box = document.createElement('div');
                     box.className = 'frame-box inspected';
                     
-                    let ceraLabel = (f.type === 'Cuadro estirado') ? 'Estirado 🍯' : (f.type ? f.type.replace('Cuadro de ', '') : 'Cuadro');
+                    let ceraLabel = (f.type === 'Cuadro estirado' && f.honeyAmount === "Nada") ? 'Estirado 🍯' : (f.type ? f.type.replace('Cuadro de ', '') : 'Cuadro');
                     box.innerHTML = `<strong>${getFrameLabel(key)}</strong><br><span style="font-size:9px; font-weight:normal;">${ceraLabel}</span>`;
                     
                     box.onclick = () => {
                         f.type = "Cuadro estirado";
                         f.honeyAmount = "Nada";
+                        f.honeyOperculated = "Nada";
                         f.pollen = "Nada";
                         box.querySelector('span').innerText = 'Estirado 🍯';
-                        showSamsungToast(`Cuadro ${getFrameLabel(key)} configurado como cera estirada`);
+                        currentInspection.cataCount += 1;
+                        showSamsungToast(`Cuadro ${getFrameLabel(key)} cosechado y transformado en estirado`);
                         renderInspectionFrames();
                     };
                     grid.appendChild(box);
@@ -1388,6 +1405,21 @@
             group.querySelectorAll('.honey-btn-pct').forEach(b => b.classList.remove('active'));
             btnEl.classList.add('active');
             document.getElementById('frame-honey-amount').value = honeyValue;
+
+            const opContainer = document.getElementById('honey-operculated-container');
+            if (honeyValue === 'Nada') {
+                opContainer.classList.add('hidden');
+                document.getElementById('frame-honey-operculated').value = 'Nada';
+            } else {
+                opContainer.classList.remove('hidden');
+            }
+        }
+
+        function selectHoneyOpPercentage(btnEl, honeyOpValue) {
+            const group = btnEl.parentElement;
+            group.querySelectorAll('.honey-op-btn-pct').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            document.getElementById('frame-honey-operculated').value = honeyOpValue;
         }
 
         function selectPollenPercentage(btnEl, pollenValue) {
@@ -1406,6 +1438,9 @@
 
             document.querySelectorAll('.honey-btn-pct').forEach(b => b.classList.remove('active'));
             document.getElementById('frame-honey-amount').value = 'Nada';
+
+            document.querySelectorAll('.honey-op-btn-pct').forEach(b => b.classList.remove('active'));
+            document.getElementById('frame-honey-operculated').value = 'Nada';
 
             document.querySelectorAll('.pollen-btn-pct').forEach(b => b.classList.remove('active'));
             document.getElementById('frame-pollen').value = 'Nada';
@@ -1432,6 +1467,18 @@
                     if (b.innerText === honeyVal) b.classList.add('active');
                 });
 
+                const opContainer = document.getElementById('honey-operculated-container');
+                if (honeyVal === 'Nada') {
+                    opContainer.classList.add('hidden');
+                } else {
+                    opContainer.classList.remove('hidden');
+                    const honeyOpVal = existing.honeyOperculated || 'Nada';
+                    document.getElementById('frame-honey-operculated').value = honeyOpVal;
+                    document.querySelectorAll('.honey-op-btn-pct').forEach(b => {
+                        if (b.innerText === honeyOpVal) b.classList.add('active');
+                    });
+                }
+
                 const pollenVal = existing.pollen || 'Nada';
                 document.getElementById('frame-pollen').value = pollenVal;
                 document.querySelectorAll('.pollen-btn-pct').forEach(b => {
@@ -1447,6 +1494,7 @@
                 document.querySelectorAll('.honey-btn-pct').forEach(b => {
                     if (b.innerText === 'Nada') b.classList.add('active');
                 });
+                document.getElementById('honey-operculated-container').classList.add('hidden');
                 
                 document.getElementById('frame-pollen').value = 'Nada';
                 document.querySelectorAll('.pollen-btn-pct').forEach(b => {
@@ -1477,8 +1525,8 @@
                 return;
             }
 
-            const frameA = currentInspection.frames[currentFrameKey] || { type: 'Cuadro de cera estampada', physical: 'Buen Estado', broodPresence: 'Sin cría', honeyAmount: 'Nada', pollen: 'Nada' };
-            const frameB = currentInspection.frames[targetKey] || { type: 'Cuadro de cera estampada', physical: 'Buen Estado', broodPresence: 'Sin cría', honeyAmount: 'Nada', pollen: 'Nada' };
+            const frameA = currentInspection.frames[currentFrameKey] || { type: 'Cuadro de cera estampada', physical: 'Buen Estado', broodPresence: 'Sin cría', honeyAmount: 'Nada', honeyOperculated: 'Nada', pollen: 'Nada' };
+            const frameB = currentInspection.frames[targetKey] || { type: 'Cuadro de cera estampada', physical: 'Buen Estado', broodPresence: 'Sin cría', honeyAmount: 'Nada', honeyOperculated: 'Nada', pollen: 'Nada' };
 
             currentInspection.frames[currentFrameKey] = frameB;
             currentInspection.frames[targetKey] = frameA;
@@ -1503,6 +1551,7 @@
                     broodPresence: 'Sin cría',
                     broodQuality: null,
                     honeyAmount: 'Nada',
+                    honeyOperculated: 'Nada',
                     pollen: 'Nada'
                 };
 
@@ -1516,6 +1565,7 @@
                 document.getElementById('frame-honey-amount').value = 'Nada';
                 document.querySelectorAll('.honey-btn-pct').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.honey-btn-pct').forEach(b => { if(b.innerText === 'Nada') b.classList.add('active'); });
+                document.getElementById('honey-operculated-container').classList.add('hidden');
 
                 document.getElementById('frame-pollen').value = 'Nada';
                 document.querySelectorAll('.pollen-btn-pct').forEach(b => b.classList.remove('active'));
@@ -1546,6 +1596,7 @@
                 broodPresence: broodPresence,
                 broodQuality: broodQualityValue,
                 honeyAmount: document.getElementById('frame-honey-amount').value,
+                honeyOperculated: document.getElementById('frame-honey-operculated').value,
                 pollen: document.getElementById('frame-pollen').value
             };
 
@@ -1611,7 +1662,8 @@
                             notes: document.getElementById('ins-notes').value,
                             photos: finalPhotos,
                             frameDetails: currentInspection.frames,
-                            movements: currentInspection.movements
+                            movements: currentInspection.movements,
+                            cataCount: currentInspection.cataCount
                         };
                         showSamsungToast("Registro actualizado");
                     }
@@ -1629,7 +1681,8 @@
                         notes: document.getElementById('ins-notes').value,
                         photos: finalPhotos,
                         frameDetails: currentInspection.frames,
-                        movements: currentInspection.movements
+                        movements: currentInspection.movements,
+                        cataCount: currentInspection.cataCount
                     };
 
                     appData.visits.push(visitData);
@@ -1824,7 +1877,7 @@
             if (amountStr === 'Poca' || amountStr === '0-25%') return 1;
             if (amountStr === 'Media' || amountStr === '25-50%') return 2;
             if (amountStr === 'Mucha' || amountStr === '50-75%') return 2.5;
-            if (amountStr === '75-100%') return 3;
+            if (amountStr === 'Abundante' || amountStr === '75-100%') return 3;
             return 0;
         }
 
@@ -1864,6 +1917,8 @@
                         dataPoints.push(getBroodNumericValue(f.broodPresence, f.broodQuality));
                     } else if (subMetric === 'miel') {
                         dataPoints.push(getAmountNumericValue(f.honeyAmount));
+                    } else if (subMetric === 'miel_op') {
+                        dataPoints.push(getAmountNumericValue(f.honeyOperculated));
                     } else if (subMetric === 'polen') {
                         dataPoints.push(getAmountNumericValue(f.pollen));
                     }
@@ -1894,6 +1949,10 @@
                             if (!v.frameDetails) return 0;
                             return Object.values(v.frameDetails).filter(f => f.honeyAmount && f.honeyAmount !== 'Nada').length;
                         });
+                        break;
+                    case 'cata_cosecha':
+                        labelText = 'Cuadros cosechados en Cata';
+                        dataPoints = visitsToDisplay.map(v => v.cataCount || 0);
                         break;
                 }
                 annotations = visitsToDisplay.map(() => null);
@@ -1939,8 +1998,14 @@
                                 precision: 0,
                                 callback: function(value) {
                                     if (metricSelect.startsWith('frame_')) {
-                                        const levels = ['Sin Nada', '0-25%', '25-50%', '50-100%'];
-                                        return levels[value] || value;
+                                        const subMetric = document.getElementById('chart-frame-submetric').value;
+                                        if (subMetric === 'miel') {
+                                            const levels = ['Nada', 'Poca', 'Mucha', 'Abundante'];
+                                            return levels[value] || value;
+                                        } else {
+                                            const levels = ['Sin Nada', '0-25%', '25-50%', '50-100%'];
+                                            return levels[value] || value;
+                                        }
                                     }
                                     return value;
                                 }
@@ -2032,7 +2097,7 @@
                         let detailsHTML = '';
                         if (f.type) detailsHTML += `<span style="color:var(--samsung-blue); font-weight:bold;">${f.type.replace('Cuadro de ','')}</span><br>`;
                         if (f.broodPresence && f.broodPresence !== 'Sin cría') detailsHTML += `Cría: ${f.broodPresence} (${f.broodQuality || ''})<br>`;
-                        if (f.honeyAmount && f.honeyAmount !== 'Nada') detailsHTML += `Miel: ${f.honeyAmount}<br>`;
+                        if (f.honeyAmount && f.honeyAmount !== 'Nada') detailsHTML += `Miel: ${f.honeyAmount} (${f.honeyOperculated || 'Nada'} op)<br>`;
                         if (f.pollen && f.pollen !== 'Nada') detailsHTML += `Polen: ${f.pollen}<br>`;
 
                         html += `
@@ -2062,7 +2127,7 @@
                     <div class="card" style="margin-bottom:0; padding:14px; border: 2px solid var(--samsung-blue);">
                         <h4 style="color:var(--samsung-blue); margin-bottom:4px;">📋 Inspección A (Nueva) (${visitA ? visitA.date : 'N/A'})</h4>
                         <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:6px;">
-                            Fuerza: <strong>${visitA ? visitA.force : '-'}</strong> | Alzas: <strong>${visitA ? visitA.alzas : 0}</strong>
+                            Fuerza: <strong>${visitA ? visitA.force : '-'}</strong> | Alzas: <strong>${visitA ? visitA.alzas : 0}</strong> | Cosecha: <strong>${visitA ? (visitA.cataCount || 0) : 0} cua.</strong>
                         </p>
                         ${renderFramesGridForComparison(visitA)}
                     </div>
@@ -2070,7 +2135,7 @@
                     <div class="card" style="margin-bottom:0; padding:14px; border: 2px solid var(--samsung-warning);">
                         <h4 style="color:var(--samsung-warning); margin-bottom:4px;">📋 Inspección B (Media) (${visitB ? visitB.date : 'N/A'})</h4>
                         <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:6px;">
-                            Fuerza: <strong>${visitB ? visitB.force : '-'}</strong> | Alzas: <strong>${visitB ? visitB.alzas : 0}</strong>
+                            Fuerza: <strong>${visitB ? visitB.force : '-'}</strong> | Alzas: <strong>${visitB ? visitB.alzas : 0}</strong> | Cosecha: <strong>${visitB ? (visitB.cataCount || 0) : 0} cua.</strong>
                         </p>
                         ${renderFramesGridForComparison(visitB)}
                     </div>
@@ -2078,7 +2143,7 @@
                     <div class="card" style="margin-bottom:0; padding:14px; border: 2px solid var(--samsung-secondary);">
                         <h4 style="color:var(--samsung-secondary); margin-bottom:4px;">📋 Inspección C (Antigua) (${visitC ? visitC.date : 'N/A'})</h4>
                         <p style="font-size:12px; color:var(--samsung-secondary); margin-bottom:6px;">
-                            Fuerza: <strong>${visitC ? visitC.force : '-'}</strong> | Alzas: <strong>${visitC ? visitC.alzas : 0}</strong>
+                            Fuerza: <strong>${visitC ? visitC.force : '-'}</strong> | Alzas: <strong>${visitC ? visitC.alzas : 0}</strong> | Cosecha: <strong>${visitC ? (visitC.cataCount || 0) : 0} cua.</strong>
                         </p>
                         ${renderFramesGridForComparison(visitC)}
                     </div>
@@ -2120,6 +2185,7 @@
                 <p><strong>Alimentación:</strong> ${visit.feed || 'Ninguna'}</p>
                 <p><strong>Proteína:</strong> ${visit.protein || 'No'}</p>
                 <p><strong>Tratamiento:</strong> ${visit.treatment || 'Ninguno'}</p>
+                <p><strong>Cuadros cosechados en cata:</strong> ${visit.cataCount || 0}</p>
                 <p><strong>Observaciones:</strong> ${visit.notes || 'Sin observaciones'}</p>
                 <h4 style="margin-top:12px; font-size:14px;">Cuadros Inspeccionados:</h4>
                 ${framesContent}
