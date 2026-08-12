@@ -572,29 +572,32 @@
                 <h3 id="frame-modal-title" style="margin-bottom: 15px; padding-right: 35px;">Detalle del Cuadro</h3>
                 
                 <label>Tipo de Cuadro</label>
-                <select id="frame-type">
-                    <option value="Cuadro de cera estampada">Cuadro de cera estampada</option>
-                    <option value="Cuadro estirado">Cuadro estirado</option>
-                    <option value="Cuadro de cría">Cuadro de cría</option>
-                    <option value="Cuadro de miel">Cuadro de miel</option>
-                    <option value="Cuadro de polen">Cuadro de polen</option>
-                    <option value="Cuadro mixto">Cuadro mixto</option>
-                </select>
+                <input type="hidden" id="frame-type" value="Cuadro de cera estampada">
+                <div class="pct-btn-group" id="type-btn-group">
+                    <button type="button" class="btn-pct type-btn" data-val="Cuadro de cera estampada" onclick="selectType(this, 'Cuadro de cera estampada')">Cera estampada</button>
+                    <button type="button" class="btn-pct type-btn" data-val="Cuadro estirado" onclick="selectType(this, 'Cuadro estirado')">Estirado</button>
+                    <button type="button" class="btn-pct type-btn" data-val="Cuadro de cría" onclick="selectType(this, 'Cuadro de cría')">Cría</button>
+                    <button type="button" class="btn-pct type-btn" data-val="Cuadro de miel" onclick="selectType(this, 'Cuadro de miel')">Miel</button>
+                    <button type="button" class="btn-pct type-btn" data-val="Cuadro de polen" onclick="selectType(this, 'Cuadro de polen')">Polen</button>
+                    <button type="button" class="btn-pct type-btn" data-val="Cuadro mixto" onclick="selectType(this, 'Cuadro mixto')">Mixto</button>
+                </div>
 
                 <label>Estado del Cuadro</label>
-                <select id="frame-physical">
-                    <option value="Buen Estado">Buen Estado</option>
-                    <option value="Mal estado">Mal estado</option>
-                    <option value="Viejo">Viejo</option>
-                </select>
+                <input type="hidden" id="frame-physical" value="Buen Estado">
+                <div class="pct-btn-group" id="physical-btn-group">
+                    <button type="button" class="btn-pct physical-btn" data-val="Buen Estado" onclick="selectPhysical(this, 'Buen Estado')">Buen Estado</button>
+                    <button type="button" class="btn-pct physical-btn" data-val="Mal estado" onclick="selectPhysical(this, 'Mal estado')">Mal estado</button>
+                    <button type="button" class="btn-pct physical-btn" data-val="Viejo" onclick="selectPhysical(this, 'Viejo')">Viejo</button>
+                </div>
 
                 <label>Cría</label>
-                <select id="frame-brood-presence" onchange="toggleBroodQuality()">
-                    <option value="Sin cría">Sin cría</option>
-                    <option value="Cría abierta">Cría abierta</option>
-                    <option value="Cría operculada">Cría operculada</option>
-                    <option value="Ambas">Ambas</option>
-                </select>
+                <input type="hidden" id="frame-brood-presence" value="Sin cría">
+                <div class="pct-btn-group" id="brood-presence-btn-group">
+                    <button type="button" class="btn-pct brood-presence-btn" data-val="Sin cría" onclick="selectBroodPresence(this, 'Sin cría')">Sin cría</button>
+                    <button type="button" class="btn-pct brood-presence-btn" data-val="Cría abierta" onclick="selectBroodPresence(this, 'Cría abierta')">Abierta</button>
+                    <button type="button" class="btn-pct brood-presence-btn" data-val="Cría operculada" onclick="selectBroodPresence(this, 'Cría operculada')">Operculada</button>
+                    <button type="button" class="btn-pct brood-presence-btn" data-val="Ambas" onclick="selectBroodPresence(this, 'Ambas')">Ambas</button>
+                </div>
 
                 <div id="frame-brood-quality-container" class="hidden">
                     <div id="brood-pct-section" class="hidden">
@@ -1373,6 +1376,29 @@
             document.getElementById('cata-modal').classList.remove('hidden');
         }
 
+        // --- FUNCIONES SELECTORES MEDIANTE BOTONES ---
+        function selectType(btnEl, val) {
+            const group = btnEl.parentElement;
+            group.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            document.getElementById('frame-type').value = val;
+        }
+
+        function selectPhysical(btnEl, val) {
+            const group = btnEl.parentElement;
+            group.querySelectorAll('.physical-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            document.getElementById('frame-physical').value = val;
+        }
+
+        function selectBroodPresence(btnEl, val) {
+            const group = btnEl.parentElement;
+            group.querySelectorAll('.brood-presence-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            document.getElementById('frame-brood-presence').value = val;
+            toggleBroodQuality();
+        }
+
         function toggleBroodQuality() {
             const val = document.getElementById('frame-brood-presence').value;
             const container = document.getElementById('frame-brood-quality-container');
@@ -1447,9 +1473,23 @@
 
             const existing = currentInspection.frames[key];
             if (existing) {
-                document.getElementById('frame-type').value = existing.type || 'Cuadro de cera estampada';
-                document.getElementById('frame-physical').value = existing.physical || 'Buen Estado';
-                document.getElementById('frame-brood-presence').value = existing.broodPresence || 'Sin cría';
+                const typeVal = existing.type || 'Cuadro de cera estampada';
+                document.getElementById('frame-type').value = typeVal;
+                document.querySelectorAll('.type-btn').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-val') === typeVal);
+                });
+
+                const physicalVal = existing.physical || 'Buen Estado';
+                document.getElementById('frame-physical').value = physicalVal;
+                document.querySelectorAll('.physical-btn').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-val') === physicalVal);
+                });
+
+                const broodPresVal = existing.broodPresence || 'Sin cría';
+                document.getElementById('frame-brood-presence').value = broodPresVal;
+                document.querySelectorAll('.brood-presence-btn').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-val') === broodPresVal);
+                });
                 
                 if (existing.broodPresence === 'Cría operculada' && existing.broodQuality) {
                     const pctVal = existing.broodQuality;
@@ -1486,8 +1526,20 @@
                 });
             } else {
                 document.getElementById('frame-type').value = 'Cuadro de cera estampada';
+                document.querySelectorAll('.type-btn').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-val') === 'Cuadro de cera estampada');
+                });
+
                 document.getElementById('frame-physical').value = 'Buen Estado';
+                document.querySelectorAll('.physical-btn').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-val') === 'Buen Estado');
+                });
+
                 document.getElementById('frame-brood-presence').value = 'Sin cría';
+                document.querySelectorAll('.brood-presence-btn').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-val') === 'Sin cría');
+                });
+
                 document.getElementById('frame-brood-quality').value = 'Media';
                 
                 document.getElementById('frame-honey-amount').value = 'Nada';
@@ -1559,8 +1611,19 @@
                 currentInspection.movements[currentFrameKey] = 'C';
 
                 document.getElementById('frame-type').value = 'Cuadro de cera estampada';
+                document.querySelectorAll('.type-btn').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-val') === 'Cuadro de cera estampada');
+                });
+
                 document.getElementById('frame-physical').value = 'Buen Estado';
+                document.querySelectorAll('.physical-btn').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-val') === 'Buen Estado');
+                });
+
                 document.getElementById('frame-brood-presence').value = 'Sin cría';
+                document.querySelectorAll('.brood-presence-btn').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-val') === 'Sin cría');
+                });
                 
                 document.getElementById('frame-honey-amount').value = 'Nada';
                 document.querySelectorAll('.honey-btn-pct').forEach(b => b.classList.remove('active'));
