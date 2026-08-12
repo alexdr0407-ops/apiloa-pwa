@@ -1334,7 +1334,7 @@
 
         // --- FUNCIONALIDAD DE VENTANA CATA DE MIEL MODIFICADA ---
         function openCataModal() {
-            // Modificación 1: Cerrar/ocultar la ventana de inspección al pulsar Cata de Miel
+            // Oculta el modal de inspección original
             closeModal('inspection-modal');
 
             const container = document.getElementById('cata-frames-container');
@@ -1359,11 +1359,14 @@
                     box.innerHTML = `<strong>${getFrameLabel(key)}</strong><br><span style="font-size:9px; font-weight:normal;">${ceraLabel}</span>`;
                     
                     box.onclick = () => {
-                        // Modificación 2: Seleccionar cuadros para ponerlos como "Cuadro estirado"
+                        // Transforma el cuadro cosechado en cera estirada limpia para el siguiente registro
                         f.type = "Cuadro estirado";
                         f.honeyAmount = "Nada";
                         f.honeyOperculated = "Nada";
                         f.pollen = "Nada";
+                        f.broodPresence = "Sin cría";
+                        f.broodQuality = null;
+
                         box.className = 'frame-box inspected';
                         box.querySelector('span').innerText = 'Estirado 🍯';
                         currentInspection.cataCount += 1;
@@ -1383,11 +1386,11 @@
             document.getElementById('cata-modal').classList.remove('hidden');
         }
 
-        // Modificación 2 (Continuación): Guardar como un registro más al pulsar Aceptar
         function acceptCataModal() {
             const todayStr = new Date().toISOString().split('T')[0];
             const numAlzas = parseInt(document.getElementById('ins-alzas').value) || 0;
 
+            // Crea un registro de inspección dedicado para la cata efectuada
             const cataVisitData = {
                 visitId: generateID(),
                 hiveId: currentInspection.hiveId,
