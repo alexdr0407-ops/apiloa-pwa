@@ -613,13 +613,14 @@
 
                     <div id="brood-select-section">
                         <label>Cantidad / Calidad de Cría</label>
-                        <select id="frame-brood-quality">
-                            <option value="Escasa">Escasa</option>
-                            <option value="Media">Media</option>
-                            <option value="Abundante">Abundante</option>
-                            <option value="Compacta">Compacta</option>
-                            <option value="Irregular">Irregular</option>
-                        </select>
+                        <input type="hidden" id="frame-brood-quality" value="Media">
+                        <div class="pct-btn-group" id="brood-quality-btn-group">
+                            <button type="button" class="btn-pct brood-qual-btn" onclick="selectBroodQuality(this, 'Escasa')">Escasa</button>
+                            <button type="button" class="btn-pct brood-qual-btn" onclick="selectBroodQuality(this, 'Media')">Media</button>
+                            <button type="button" class="btn-pct brood-qual-btn" onclick="selectBroodQuality(this, 'Abundante')">Abundante</button>
+                            <button type="button" class="btn-pct brood-qual-btn" onclick="selectBroodQuality(this, 'Compacta')">Compacta</button>
+                            <button type="button" class="btn-pct brood-qual-btn" onclick="selectBroodQuality(this, 'Irregular')">Irregular</button>
+                        </div>
                     </div>
                 </div>
 
@@ -628,8 +629,8 @@
                 <div class="pct-btn-group" id="honey-pct-section">
                     <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, 'Nada')">Nada</button>
                     <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, 'Poca')">Poca</button>
+                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, 'Media')">Media</button>
                     <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, 'Mucha')">Mucha</button>
-                    <button type="button" class="btn-pct honey-btn-pct" onclick="selectHoneyPercentage(this, 'Abundante')">Abundante</button>
                 </div>
 
                 <div id="honey-operculated-container" class="hidden">
@@ -1442,6 +1443,13 @@
             toggleBroodQuality();
         }
 
+        function selectBroodQuality(btnEl, val) {
+            const group = btnEl.parentElement;
+            group.querySelectorAll('.brood-qual-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            document.getElementById('frame-brood-quality').value = val;
+        }
+
         function toggleBroodQuality() {
             const val = document.getElementById('frame-brood-presence').value;
             const container = document.getElementById('frame-brood-quality-container');
@@ -1514,6 +1522,8 @@
             document.querySelectorAll('.pollen-btn-pct').forEach(b => b.classList.remove('active'));
             document.getElementById('frame-pollen').value = 'Nada';
 
+            document.querySelectorAll('.brood-qual-btn').forEach(b => b.classList.remove('active'));
+
             const existing = currentInspection.frames[key];
             if (existing) {
                 const typeVal = existing.type || 'Cuadro de cera estampada';
@@ -1541,7 +1551,11 @@
                         if (b.innerText === pctVal) b.classList.add('active');
                     });
                 } else {
-                    document.getElementById('frame-brood-quality').value = existing.broodQuality || 'Media';
+                    const qualVal = existing.broodQuality || 'Media';
+                    document.getElementById('frame-brood-quality').value = qualVal;
+                    document.querySelectorAll('.brood-qual-btn').forEach(b => {
+                        if (b.innerText === qualVal) b.classList.add('active');
+                    });
                 }
 
                 const honeyVal = existing.honeyAmount || 'Nada';
@@ -1584,6 +1598,9 @@
                 });
 
                 document.getElementById('frame-brood-quality').value = 'Media';
+                document.querySelectorAll('.brood-qual-btn').forEach(b => {
+                    if (b.innerText === 'Media') b.classList.add('active');
+                });
                 
                 document.getElementById('frame-honey-amount').value = 'Nada';
                 document.querySelectorAll('.honey-btn-pct').forEach(b => {
@@ -2106,7 +2123,7 @@
                                     if (metricSelect.startsWith('frame_')) {
                                         const subMetric = document.getElementById('chart-frame-submetric').value;
                                         if (subMetric === 'miel') {
-                                            const levels = ['Nada', 'Poca', 'Mucha', 'Abundante'];
+                                            const levels = ['Nada', 'Poca', 'Media', 'Mucha'];
                                             return levels[value] || value;
                                         } else {
                                             const levels = ['Sin Nada', '0-25%', '25-50%', '50-100%'];
